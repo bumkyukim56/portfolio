@@ -25,14 +25,14 @@ export default function Levart() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-ui className="bg-surface p-3 sm:p-5">
+      <div data-ui className="bg-[var(--lv-panel)] p-3 sm:p-5">
         <WorldMap
           selected={selected}
           onSelect={setSelected}
           isKnown={(id) => id in countries}
         />
       </div>
-      <div className="bg-surface px-5 py-4">
+      <div className="bg-[var(--lv-panel)] px-5 py-4">
         {country ? (
           <p>
             <span className="font-medium">{country.name}</span>

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function LevartPage() {
   return (
-    <div className="wrap pb-24 pt-28 sm:pt-32">
+    <div className="levart wrap pb-24 pt-28 sm:pt-32">
       <div className="flex flex-col gap-10">
         <div>
           <h1 className="head">Levart, a map of where you have been</h1>

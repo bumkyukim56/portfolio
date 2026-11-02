@@ -1,16 +1,26 @@
 @import "tailwindcss";
 
-/* Tokens from the direction sheet (taste-skill run, seed 727469968: "Sand and moss").
-   Every colour in the site references one of these. */
+/* Tokens. Composition from the taste-skill direction sheet (seed 727469968); the colours are
+   BK's own: the cream, navy and yellow of a Mizuno Pro glove. Every colour in the site references one of these. */
 :root {
-  --bg: #ddd6c6;
-  --surface: #d2cab8;
-  --ink: #2a2a26;
-  --muted: #4f4d44;
-  --accent: #4f6238;
-  --accent-ink: #ffffff;
-  --field-1: #3f5a2a;
-  --field-1-ink: #ffffff;
+  --bg: #ede8db;        /* cream leather */
+  --surface: #e2dccc;   /* one tone step down */
+  --ink: #1b2340;       /* navy */
+  --muted: #4d5470;
+  --accent: #d9c63c;    /* the glove's yellow */
+  --accent-ink: #1b2340;
+  --accent-hover: #c8b52e;
+  --field-1: #1b2340;   /* navy field, cream ink */
+  --field-1-ink: #ede8db;
+
+  /* The map's colours. The portfolio's map uses the site palette; the Levart
+     page overrides these with the tone of the Levart cover art (see .levart). */
+  --map-land: var(--muted);
+  --map-land-opacity: 0.45;
+  --map-visited: var(--accent);
+  --map-complete: var(--accent);
+  --map-selected: var(--ink);
+  --map-stroke: var(--bg);
 
   --font-display: "Gambarino", Georgia, "Times New Roman", serif;
   --font-text: "General Sans", "Helvetica Neue", Arial, sans-serif;
@@ -53,6 +63,22 @@
 
 html {
   background: var(--bg);
+}
+
+/* Levart's own tone, from the album cover: warm cream, mint, a lime glow. Navy ink stays. */
+.levart {
+  --lv-ground: #f6f0e2;
+  --lv-panel: #ece5d2;
+  --lv-mint: #86e3a6;
+  --lv-mint-deep: #2fbf86;
+  --lv-lime: #c9ef4f;
+  --map-land: #1b2340;
+  --map-land-opacity: 0.12;
+  --map-visited: var(--lv-mint);
+  --map-complete: var(--lv-lime);
+  --map-selected: var(--lv-mint-deep);
+  --map-stroke: var(--lv-ground);
+  background: var(--lv-ground);
 }
 
 @media (min-width: 640px) {
@@ -123,7 +149,7 @@ p {
   transition: background-color 160ms ease, transform 160ms ease;
 }
 .btn:hover {
-  background: var(--field-1);
+  background: var(--accent-hover);
 }
 .btn:active {
   transform: translateY(1px);

@@ -21,11 +21,13 @@ type Props = {
 };
 
 // Fills come from the palette tokens so the map matches whatever ground it sits on.
+// Colours come from CSS variables so the same component can take the portfolio's
+// palette on the home page and Levart's own tone on /levart.
 const fills = {
-  unknown: "var(--muted)",   // shapes we have no data for: faint
-  land: "var(--muted)",      // land, one tone darker than the ground it sits on
-  visited: "var(--accent)",
-  selected: "var(--field-1)",
+  unknown: "var(--map-land)",
+  land: "var(--map-land)",
+  visited: "var(--map-visited)",
+  selected: "var(--map-selected)",
 };
 
 export default function WorldMap({ selected, onSelect, isKnown, visited }: Props) {
@@ -80,7 +82,7 @@ export default function WorldMap({ selected, onSelect, isKnown, visited }: Props
         const isVisited = id !== null && (visited?.has(id) ?? false);
 
         let fill = fills.unknown;
-        let opacity = 0.35;
+        let opacity = 0.6; // no data: fainter than land
         if (known) {
           fill = fills.land;
           opacity = 1;
@@ -93,8 +95,8 @@ export default function WorldMap({ selected, onSelect, isKnown, visited }: Props
             key={id ?? `noid-${index}`}
             d={path(country) ?? undefined}
             fill={fill}
-            fillOpacity={isVisited || isSelected ? 1 : opacity * 0.45}
-            stroke="var(--bg)"
+            style={{ fillOpacity: isVisited || isSelected ? 1 : `calc(var(--map-land-opacity) * ${opacity})` }}
+            stroke="var(--map-stroke)"
             strokeWidth={0.6}
             className={`transition-[fill] duration-200 ${known ? "cursor-pointer hover:brightness-90" : ""}`}
             onClick={(event) => {
