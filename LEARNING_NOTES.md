@@ -453,3 +453,30 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. In one sentence, what makes a point belong to a given Voronoi cell?
 2. Two cities in the dataset share the same coordinates (it happens). What does the diagram do, and what would you see on the map?
 3. The regions depend on which cities are in the dataset. If you added a 16th city to a country, which existing regions would change?
+
+---
+
+## Session 13 — 2026-11-03 — The passport is the home page
+
+### What we did
+- The home page is now the passport: closed, it is your cover image, portrait. Hover lifts the cover 22°; click swings it open, and the book turns sideways into a spread with the endpaper pattern above and your identity page below.
+- The identity page is rebuilt in HTML to the real layout (header row, photo slot, blue field labels, machine-readable lines) with your details from `site.ts`. The sample image had a stranger's photo and fake data, so it is not shipped.
+- The lower page is a catalogue: tap the identity page for the contents, then turn to Levart, Projects, About or Contact. Each page has a Back link; the spread has Close. The Levart page's passport uses the same cover image.
+
+### Concepts
+**State machine in a component.** `open`, `spread` and `page` are three small pieces of state; every visual is derived from them. The 520ms gap between `open` and `spread` is the cover's swing. Draw the states on paper before writing the effects.
+
+**Hover is a pointer thing.** `@media (hover: hover) and (pointer: fine)` gates the peek so a phone tap never gets stuck half-open.
+
+**Images need width and height.** `next/image` wants both so the layout is reserved before the file arrives; `fill` is the alternative when the box is sized by CSS.
+
+**A transition that looks broken in dev may be fine in production.** The dev server compiles chunks on demand and React's dev build is slower; the first click after a restart can lag by a second. Test interactions on `next build && next start` before changing the code.
+
+### Yours
+- `koreanName` in `site.ts` (your name in Hangul) shows on the identity page once filled.
+- A photo at `web/public/photo.jpg` replaces the initials in the photo slot.
+
+### Check-in questions
+1. What happens if `spread` were set in the same click as `open`?
+2. Why is the identity page a `<button>` but the contents page a `<div>` with buttons inside?
+3. Where does `--spread-page-h` come from, and why is it a fraction of the width?

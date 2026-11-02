@@ -13,6 +13,11 @@ export type Site = {
   githubHandle: string;
   linkedin: string;
   photo?: string; // optional: path under /public, e.g. "/photo.jpg"
+  surname: string;
+  givenNames: string;
+  koreanName: string;   // 한글성명; leave "" until confirmed
+  passportNo: string;
+  issued: string;       // the day the site went up
 };
 
 export const site: Site = {
@@ -29,6 +34,11 @@ export const site: Site = {
   githubHandle: "bumkyukim56",
   linkedin: "https://www.linkedin.com/in/TODO", // TODO
   // photo: "/photo.jpg", // uncomment once you add web/public/photo.jpg
+  surname: "KIM",
+  givenNames: "BUMKYU",
+  koreanName: "", // TODO: your name in Hangul, e.g. "김범규"
+  passportNo: "LV2026001",
+  issued: "01 11월/NOV 2026",
 };
 
 // Places BK has been. `numeric` is the ISO code the map shapes use.

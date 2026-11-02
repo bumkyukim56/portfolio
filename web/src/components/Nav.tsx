@@ -13,12 +13,10 @@ const links = [
   { href: site.github, label: "GitHub", external: true },
 ];
 
-// Plain navigation: wordmark, three links, no bar, no border. It sits over the
-// top of each page; the home page's dark first screen gets light text.
+// Plain navigation: wordmark, three links, no bar, no border. It sits over the top of each page.
 export default function Nav() {
   const pathname = usePathname();
-  const onDark = pathname === "/";
-  const tone = onDark ? "text-field-ink" : "text-ink";
+  const tone = "text-ink";
 
   return (
     <header className={`absolute inset-x-0 top-0 z-20 ${tone}`}>
