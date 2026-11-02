@@ -21,8 +21,6 @@ export default function HomeMap() {
         onSelect={setSelected}
         isKnown={(id) => visited.has(id)}
         visited={visited}
-        progress={Object.fromEntries(trips.map((trip) => [trip.numeric, 0.5]))}
-        cityCount={() => 1}
       />
       <p className="mt-3 min-h-[1.5em]">
         {trip ? (

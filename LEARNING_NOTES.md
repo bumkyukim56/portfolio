@@ -408,3 +408,27 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why is the flag colour computed in the Python script rather than in the browser when the page loads?
 2. A country with 15 cities and 3 added shows a flag through 3 strips. Which two clip paths are involved, and which one changes when you add a 4th city?
 3. The hero's three dive elements have delays of 0, 120 and 260ms. What would you lose if all three were 0?
+
+---
+
+## Session 11 — 2026-11-03 — Zoom into a country, sections per city
+
+### What we did
+- Click a country and the map flies into it: the group holding every country gets `translate(...) scale(k)` so the country fills the frame with air around it, animated by one CSS transition on `transform` (800ms, strong ease-out). Click the ocean or "Back to the world" and it flies out.
+- The selected country divides into one vertical section per city, in dataset order (capital first), each with a vertical label and a click target. Clicking a section adds or removes that city, the same as typing it; added sections show the flag through them.
+
+### Concepts
+**Zoom by transforming, not re-projecting.** The projection and all 175 paths stay as they are; only a parent `<g>` is scaled and translated. `k = min(W / (bw · pad), H / (bh · pad))` fits the box, capped at 10; the translate puts the box's centre at the frame's centre. Cheap, and the browser can animate it.
+
+**vector-effect: non-scaling-stroke.** Scaled by k, a 0.6-unit outline would become a 6px rope. This attribute keeps strokes at their on-screen width whatever the zoom. Text has no such attribute, so labels divide their size by k instead.
+
+**Hit targets separate from visuals.** Each section's click target is a transparent `<rect>` clipped to the country outline. The flag, dividers and labels have `pointer-events: none` so clicks reach the rect and the base path beneath keeps its tooltip.
+
+**paint-order: stroke.** Labels sit on a flag, which has every colour. A ground-coloured stroke painted *under* the glyphs (`paint-order="stroke"`) gives each label a halo so it reads on anything.
+
+**Two inputs, one state.** Typing a city and clicking its section both call `toggleCity`. One function, one place to add the stamp bookkeeping; the two controls can never disagree.
+
+### Check-in questions
+1. Why does the zoom transform live on a `<g>` inside the SVG rather than on the `viewBox` attribute?
+2. What would a section's label look like at `k = 3` if its font size were not divided by `k`?
+3. The sections follow dataset order, capital first. What would you need to change to order them west to east by longitude instead?

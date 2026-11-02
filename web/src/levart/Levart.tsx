@@ -232,14 +232,30 @@ export default function Levart({
             isAdded={(numeric, cityId) => (visits[numeric] ?? []).includes(cityId)}
           />
           <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
-            <div data-ui className="bg-[var(--lv-panel)] p-3 lg:col-span-8 sm:p-5">
+            <div data-ui className="relative bg-[var(--lv-panel)] p-3 lg:col-span-8 sm:p-5">
+              {selected && (
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="absolute left-3 top-3 z-10 min-h-11 bg-[var(--lv-ground)] px-4 text-small underline underline-offset-4 sm:left-5 sm:top-5"
+                >
+                  Back to the world
+                </button>
+              )}
               <WorldMap
                 selected={selected}
                 onSelect={setSelected}
                 isKnown={(id) => id in countries}
                 visited={visitedCountries}
                 progress={progress}
-                cityCount={(id) => countries[id]?.cities.length ?? 0}
+                cities={(id) =>
+                  (countries[id]?.cities ?? []).map((city) => ({
+                    id: city.id,
+                    name: city.name,
+                    added: (visits[id] ?? []).includes(city.id),
+                  }))
+                }
+                onToggleCity={toggleCity}
                 colorOf={(id) => countries[id]?.color ?? undefined}
                 flagCode={(id) => countries[id]?.code.toLowerCase()}
                 dataUrl={dataUrl}
