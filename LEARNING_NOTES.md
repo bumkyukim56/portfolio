@@ -432,3 +432,24 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why does the zoom transform live on a `<g>` inside the SVG rather than on the `viewBox` attribute?
 2. What would a section's label look like at `k = 3` if its font size were not divided by `k`?
 3. The sections follow dataset order, capital first. What would you need to change to order them west to east by longitude instead?
+
+---
+
+## Session 12 — 2026-11-03 — City regions with real shapes
+
+### What we did
+- The vertical strips are gone. A selected country now divides into one region per city: the part of the country nearest to that city, computed from the city's real latitude and longitude. Each region is a click target; added regions show the flag; a dot and the name sit at the city's true position.
+
+### Concepts
+**Voronoi diagrams.** Given points, a Voronoi diagram carves the plane into cells where each cell is everything closer to its point than to any other. `d3-delaunay` builds it from the projected city positions; clipping the cells to the country's outline gives regions that follow the geography. It's the same idea behind "nearest store" maps.
+
+**Project once, reuse everywhere.** The map keeps the d3 projection object, not just the path generator, so a city's `[lng, lat]` becomes map `x, y` with the same function that drew the country. Points and shapes agree by construction.
+
+**Clip paths as the integration step.** The Voronoi cells extend to the bounding box; clipping them to the country's path trims them to the land. The flag clip is then the union of the added cells, and the flag group is also clipped to the outline. No polygon intersection code of our own.
+
+**Labels at data positions, sized against zoom.** Labels sit at the projected city point with a ground-coloured halo (`paint-order: stroke`), font size divided by the zoom factor so they stay 12px on screen.
+
+### Check-in questions
+1. In one sentence, what makes a point belong to a given Voronoi cell?
+2. Two cities in the dataset share the same coordinates (it happens). What does the diagram do, and what would you see on the map?
+3. The regions depend on which cities are in the dataset. If you added a 16th city to a country, which existing regions would change?

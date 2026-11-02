@@ -252,6 +252,8 @@ export default function Levart({
                   (countries[id]?.cities ?? []).map((city) => ({
                     id: city.id,
                     name: city.name,
+                    lat: city.lat,
+                    lng: city.lng,
                     added: (visits[id] ?? []).includes(city.id),
                   }))
                 }

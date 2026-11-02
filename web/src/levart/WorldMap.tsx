@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { geoNaturalEarth1, geoPath } from "d3-geo";
+import { Delaunay } from "d3-delaunay";
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -19,7 +20,7 @@ type Props = {
   isKnown: (numericId: string) => boolean;  // do we have data for this shape?
   visited?: Set<string>;                    // numeric ids to fill as visited
   progress?: Record<string, number>;        // numeric id → share of cities ticked, 0..1
-  cities?: (numericId: string) => { id: number; name: string; added: boolean }[]; // the sections of a selected country
+  cities?: (numericId: string) => { id: number; name: string; lat: number; lng: number; added: boolean }[]; // the regions of a selected country
   onToggleCity?: (numericId: string, cityId: number) => void;                       // clicking a section
   colorOf?: (numericId: string) => string | undefined;  // the country's own colour (from its flag)
   flagCode?: (numericId: string) => string | undefined; // ISO alpha-2 for the flag image
@@ -60,14 +61,15 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
   }, [dataUrl]);
 
   // Build the projection and path generator once per dataset, not on every render.
-  const path = useMemo(() => {
+  const geo = useMemo(() => {
     if (!features) return null;
     const projection = geoNaturalEarth1().fitSize([WIDTH, HEIGHT], {
       type: "FeatureCollection",
       features,
     });
-    return geoPath(projection);
+    return { projection, path: geoPath(projection) };
   }, [features]);
+  const path = geo?.path ?? null;
 
   // The zoom. When a country is selected the whole map group is scaled and moved so that
   // country fills the frame with some air around it. One CSS transition on `transform`
@@ -116,10 +118,23 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
         const code = id !== null ? flagCode?.(id) : undefined;
         const own = id !== null ? colorOf?.(id) : undefined;
 
-        // The selected country divides into one vertical section per city, in the order of the
-        // dataset (capital first). Sections for cities you have added show the flag through them.
-        const sections = isSelected && !complete && id !== null ? (cities?.(id) ?? []) : [];
-        const strips = sections.length;
+        // The selected country divides into one region per city: the part of the country
+        // nearest to that city (a Voronoi diagram of the cities' real positions), clipped to
+        // the outline. Regions for cities you have added show the flag through them.
+        const sections = isSelected && !complete && id !== null && geo ? (cities?.(id) ?? []) : [];
+        const regions = sections.length > 0 && geo
+          ? (() => {
+              const points: [number, number][] = sections.map(
+                (city) => (geo.projection([city.lng, city.lat]) ?? [x0, y0]) as [number, number],
+              );
+              const voronoi = Delaunay.from(points).voronoi([x0 - 1, y0 - 1, x1 + 1, y1 + 1]);
+              return sections.map((city, i) => ({
+                city,
+                point: points[i],
+                d: voronoi.renderCell(i),
+              }));
+            })()
+          : [];
         const addedSections = sections.filter((city) => city.added).length;
         const showFlag = code && (complete || addedSections > 0);
 
@@ -139,7 +154,6 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
           onSelect(isSelected ? null : id);
         };
         const key = id ?? `noid-${index}`;
-        const stripWidth = strips > 0 ? (x1 - x0) / strips : 0;
         const k = zoom.k; // so strokes and labels keep their on-screen size when zoomed in
 
         return (
@@ -156,37 +170,31 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
               <title>{country.properties.name}</title>
             </path>
 
-            {/* The sections of the selected country: dividers, a click target and a label each. */}
-            {strips > 0 && (
+            {/* The regions of the selected country: each a click target, outlined in the ground colour. */}
+            {regions.length > 0 && (
               <>
                 <clipPath id={`shape-${key}`}>
                   <path d={d} />
                 </clipPath>
                 <g clipPath={`url(#shape-${key})`}>
-                  {sections.map((city, i) => {
-                    const sx = x0 + stripWidth * i;
-                    return (
-                      <g key={city.id}>
-                        {i > 0 && (
-                          <line x1={sx} x2={sx} y1={y0} y2={y1} stroke="var(--map-stroke)" strokeWidth={1} vectorEffect="non-scaling-stroke" pointerEvents="none" />
-                        )}
-                        <rect
-                          x={sx}
-                          y={y0}
-                          width={stripWidth}
-                          height={y1 - y0}
-                          fill="transparent"
-                          className="cursor-pointer"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            if (id !== null) onToggleCity?.(id, city.id);
-                          }}
-                        >
-                          <title>{city.added ? `${city.name}: added. Click to remove.` : `${city.name}: click to add.`}</title>
-                        </rect>
-                      </g>
-                    );
-                  })}
+                  {regions.map(({ city, d: cell }) => (
+                    <path
+                      key={city.id}
+                      d={cell}
+                      fill={own ?? fills.visited}
+                      fillOpacity={city.added ? 0 : 0.55}
+                      stroke="var(--map-stroke)"
+                      strokeWidth={1}
+                      vectorEffect="non-scaling-stroke"
+                      className="cursor-pointer"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (id !== null) onToggleCity?.(id, city.id);
+                      }}
+                    >
+                      <title>{city.added ? `${city.name}: added. Click to remove.` : `${city.name}: click to add.`}</title>
+                    </path>
+                  ))}
                 </g>
               </>
             )}
@@ -197,10 +205,8 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
                   {complete ? (
                     <path d={d} />
                   ) : (
-                    // One rectangle per added section; the flag group below is clipped to the outline too.
-                    sections.map((city, i) =>
-                      city.added ? <rect key={city.id} x={x0 + stripWidth * i} y={y0} width={stripWidth} height={y1 - y0} /> : null,
-                    )
+                    // One cell per added region; the flag group below is clipped to the outline too.
+                    regions.map(({ city, d: cell }) => (city.added ? <path key={city.id} d={cell} /> : null))
                   )}
                 </clipPath>
                 <g className={complete ? "flag-in" : undefined} style={{ transformOrigin: `${(x0 + x1) / 2}px ${(y0 + y1) / 2}px` }} pointerEvents="none">
@@ -220,30 +226,29 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
               </>
             )}
 
-            {/* Labels, drawn last so they sit above the flag. Vertical, one per section, sized for the screen. */}
-            {strips > 0 && (
+            {/* Each city's dot and name at its real position, drawn last so they sit above the flag. */}
+            {regions.length > 0 && (
               <g clipPath={`url(#shape-${key})`} pointerEvents="none" aria-hidden="true">
-                {sections.map((city, i) => {
-                  const mid = x0 + stripWidth * (i + 0.5);
-                  const fontSize = Math.min(13 / k, stripWidth * 0.7);
+                {regions.map(({ city, point: [px, py] }) => {
+                  const fontSize = 12 / k;
                   return (
-                    <text
-                      key={city.id}
-                      x={mid}
-                      y={(y0 + y1) / 2}
-                      fontSize={fontSize}
-                      fontFamily="var(--font-text)"
-                      fontWeight={city.added ? 500 : 400}
-                      fill="var(--ink)"
-                      stroke="var(--map-stroke)"
-                      strokeWidth={fontSize * 0.25}
-                      paintOrder="stroke"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={`rotate(-90 ${mid} ${(y0 + y1) / 2})`}
-                    >
-                      {city.name}
-                    </text>
+                    <g key={city.id}>
+                      <circle cx={px} cy={py} r={2.4 / k} fill="var(--ink)" stroke="var(--map-stroke)" strokeWidth={1.2 / k} />
+                      <text
+                        x={px}
+                        y={py - 4.5 / k}
+                        fontSize={fontSize}
+                        fontFamily="var(--font-text)"
+                        fontWeight={city.added ? 500 : 400}
+                        fill="var(--ink)"
+                        stroke="var(--map-stroke)"
+                        strokeWidth={fontSize * 0.28}
+                        paintOrder="stroke"
+                        textAnchor="middle"
+                      >
+                        {city.name}
+                      </text>
+                    </g>
                   );
                 })}
               </g>
