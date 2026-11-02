@@ -7,14 +7,16 @@ export const metadata: Metadata = {
 
 export default function LevartPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Levart</h1>
-        <p className="mt-2 text-zinc-500">
-          Mark the places you&apos;ve been and see how much of the world you&apos;ve explored.
-        </p>
+    <div className="wrap pb-24 pt-28 sm:pt-32">
+      <div className="flex flex-col gap-10">
+        <div>
+          <h1 className="head">Levart, a map of where you have been</h1>
+          <p className="lead mt-4 max-w-[46ch] text-muted">
+            Click a country, tick the cities you have seen, and watch it fill.
+          </p>
+        </div>
+        <Levart />
       </div>
-      <Levart />
     </div>
   );
 }

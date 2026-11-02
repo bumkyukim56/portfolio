@@ -17,9 +17,18 @@ type Props = {
   selected: string | null;                  // numeric id of the selected country
   onSelect: (numericId: string | null) => void;
   isKnown: (numericId: string) => boolean;  // do we have data for this shape?
+  visited?: Set<string>;                    // numeric ids to fill as visited
 };
 
-export default function WorldMap({ selected, onSelect, isKnown }: Props) {
+// Fills come from the palette tokens so the map matches whatever ground it sits on.
+const fills = {
+  unknown: "var(--muted)",   // shapes we have no data for: faint
+  land: "var(--muted)",      // land, one tone darker than the ground it sits on
+  visited: "var(--accent)",
+  selected: "var(--field-1)",
+};
+
+export default function WorldMap({ selected, onSelect, isKnown, visited }: Props) {
   const [features, setFeatures] = useState<CountryFeature[] | null>(null);
 
   // Load the country shapes once, after the component first renders.
@@ -53,9 +62,7 @@ export default function WorldMap({ selected, onSelect, isKnown }: Props) {
   }, [features]);
 
   if (!features || !path) {
-    return (
-      <div className="aspect-[960/500] w-full animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-900" />
-    );
+    return <div className="aspect-[960/500] w-full bg-surface" aria-hidden="true" />;
   }
 
   return (
@@ -70,17 +77,26 @@ export default function WorldMap({ selected, onSelect, isKnown }: Props) {
         const id = country.id == null ? null : String(country.id);
         const known = id !== null && isKnown(id);
         const isSelected = id !== null && id === selected;
+        const isVisited = id !== null && (visited?.has(id) ?? false);
 
-        let fill = "fill-zinc-200 dark:fill-zinc-800"; // no data: inert
-        if (known) fill = "fill-zinc-300 hover:fill-zinc-400 dark:fill-zinc-700 dark:hover:fill-zinc-600";
-        if (isSelected) fill = "fill-emerald-500 hover:fill-emerald-500";
+        let fill = fills.unknown;
+        let opacity = 0.35;
+        if (known) {
+          fill = fills.land;
+          opacity = 1;
+        }
+        if (isVisited) fill = fills.visited;
+        if (isSelected) fill = fills.selected;
 
         return (
           <path
             key={id ?? `noid-${index}`}
             d={path(country) ?? undefined}
-            strokeWidth={0.5}
-            className={`${fill} stroke-white transition-colors dark:stroke-zinc-950 ${known ? "cursor-pointer" : ""}`}
+            fill={fill}
+            fillOpacity={isVisited || isSelected ? 1 : opacity * 0.45}
+            stroke="var(--bg)"
+            strokeWidth={0.6}
+            className={`transition-[fill] duration-200 ${known ? "cursor-pointer hover:brightness-90" : ""}`}
             onClick={(event) => {
               event.stopPropagation(); // don't let the svg's onClick clear what we just set
               if (!known || id === null) return;

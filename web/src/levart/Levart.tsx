@@ -25,21 +25,23 @@ export default function Levart() {
 
   return (
     <div className="flex flex-col gap-4">
-      <WorldMap
-        selected={selected}
-        onSelect={setSelected}
-        isKnown={(id) => id in countries}
-      />
-      <div className="rounded-xl border border-zinc-200 p-4 text-sm dark:border-zinc-800">
+      <div data-ui className="bg-surface p-3 sm:p-5">
+        <WorldMap
+          selected={selected}
+          onSelect={setSelected}
+          isKnown={(id) => id in countries}
+        />
+      </div>
+      <div className="bg-surface px-5 py-4">
         {country ? (
           <p>
-            <span className="font-semibold">{country.name}</span>
-            <span className="text-zinc-500">
+            <span className="font-medium">{country.name}</span>
+            <span className="text-muted">
               {" "}· {country.continent} · {country.cities.length} cities
             </span>
           </p>
         ) : (
-          <p className="text-zinc-500">Click a country.</p>
+          <p className="text-muted">Click a country.</p>
         )}
       </div>
     </div>

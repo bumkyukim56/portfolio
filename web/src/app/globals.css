@@ -1,26 +1,182 @@
 @import "tailwindcss";
 
+/* Tokens from the direction sheet (taste-skill run, seed 727469968: "Sand and moss").
+   Every colour in the site references one of these. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #ddd6c6;
+  --surface: #d2cab8;
+  --ink: #2a2a26;
+  --muted: #4f4d44;
+  --accent: #4f6238;
+  --accent-ink: #ffffff;
+  --field-1: #3f5a2a;
+  --field-1-ink: #ffffff;
+
+  --font-display: "Gambarino", Georgia, "Times New Roman", serif;
+  --font-text: "General Sans", "Helvetica Neue", Arial, sans-serif;
+
+  /* Five sizes, far apart. */
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --step-display: clamp(4.25rem, 10vw, 10rem);
+
+  --margin: clamp(1rem, 2.2vw, 2rem);
+  --page-offset: 52px;
+  --gutter: clamp(0.75rem, 1.4vw, 1.5rem);
 }
 
+/* Expose the tokens to Tailwind so classes like bg-ground, text-ink, font-display exist. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ground: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-field: var(--field-1);
+  --color-field-ink: var(--field-1-ink);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-text);
+
+  --text-small: var(--step-small);
+  --text-body: var(--step-body);
+  --text-lead: var(--step-lead);
+  --text-head: var(--step-head);
+  --text-display: var(--step-display);
+
+  --spacing-margin: var(--margin);
+  --spacing-gutter: var(--gutter);
 }
 
-@media (prefers-color-scheme: dark) {
+html {
+  background: var(--bg);
+}
+
+@media (min-width: 640px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --page-offset: 64px;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* One pair of equal outer margins for the whole site. */
+@layer components {
+  .wrap {
+    padding-inline: var(--margin);
+  }
+}
+
+@layer components {
+/* Display type: the name on the first screen. */
+.display {
+  font-family: var(--font-display);
+  font-size: var(--step-display);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin-left: -0.04em; /* optical alignment of the round B */
+}
+
+/* Section headings. */
+.head {
+  font-family: var(--font-display);
+  font-size: var(--step-head);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.lead {
+  font-size: var(--step-lead);
+  line-height: 1.35;
+}
+
+/* The one button shape on the site: flat, square-cornered, 52px tall. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 28px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+.btn:hover {
+  background: var(--field-1);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Passport stationery: filled shapes with real edges, never outlined boxes. */
+.tab {
+  clip-path: polygon(0 100%, 12px 0, calc(100% - 12px) 0, 100% 100%);
+}
+
+/* A perforated edge: a dotted border of round dots, 5px, which the house rules allow. */
+.perforation {
+  border-top: 5px dotted var(--field-1);
+}
+}
+
+/* Motion helpers (step 9). Content is visible without script; .reveal only adds the move. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .js .reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* One moving picture: a slow drift on the contact photograph. */
+  .drift {
+    animation: drift 28s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes drift {
+    from { transform: scale(1) translateY(0); }
+    to { transform: scale(1.06) translateY(-1.5%); }
+  }
+
+  .stamp img {
+    transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .stamp:hover img {
+    transform: scale(1.04);
+  }
 }

@@ -201,3 +201,49 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Trace a click on Brazil: which handler runs first, what state changes, and which component re-renders?
 2. Why is `path` built with `useMemo` but `features` stored with `useState`?
 3. What would you see if you removed `event.stopPropagation()` from the country path?
+
+---
+
+## Session 5 — 2026-11-02 — Design pass with Taste Skill
+
+### What we did
+- Installed the `design-taste-frontend` skill and ran its process on the portfolio: measure the existing site, deal an art direction, write the idea and copy, rebuild, then inspect in a real browser at 1440/768/390 and fix until zero failures.
+- Direction dealt: "The page is the object" (seed 727469968). Idea: the site is a passport. Fonts Gambarino + General Sans, palette sand and moss.
+- Rebuilt the home page as four sections (passport hero with tabbed pages, stacked project folders with the live map, a letter on a scalloped sheet, a contact card over a Philadelphia photograph) and restyled the Projects and Levart pages to the same tokens.
+- Seven open-licence photographs from Wikimedia Commons, credited in the footer.
+
+### Concepts
+
+**Design tokens.** Every colour, size and font is a CSS custom property on `:root` (`--bg`, `--ink`, `--accent`, `--step-body`...). Components reference tokens, never raw values. Change a token, the whole site follows. Tailwind v4's `@theme inline` block turns those tokens into utility classes (`bg-ground`, `text-ink`, `text-lead`).
+
+**CSS cascade layers.** Tailwind v4 puts its utilities in `@layer utilities`. Unlayered CSS always beats layered CSS regardless of order or specificity, so my `.btn { display: inline-flex }` silently overrode `sm:hidden`. Fix: put your own component classes in `@layer components`, which sits below utilities. A bug you only find by looking at the screenshot.
+
+**Margin collapsing.** A block's top margin "collapses" through its parent's top edge when nothing (padding, border, flex) separates them. The front page's `margin-top` moved the whole container instead of the page, so the back pages disappeared behind it. `display: flex` on the container stops the collapse.
+
+**min-width: 0 in grids.** A grid column's default `min-width: auto` lets wide content (a `<pre>`) stretch the column past the viewport. `min-w-0` lets the column shrink and the content scroll instead.
+
+**clip-path shapes.** Tabs and scalloped edges are flat filled boxes cut with `clip-path: polygon(...)`. `shapes.ts` generates the scallop polygon from a count and depth: a pure function returning a CSS string.
+
+**Sticky stacking.** The project folders use `position: sticky` with increasing `top` offsets, so each band pins under the previous one's strip as you scroll. Pure CSS, no JavaScript.
+
+**Entrance motion without hiding content.** `.reveal` elements start invisible only when `<html>` has a `js` class, added by an inline script before first paint. An IntersectionObserver adds `.is-in` when each element scrolls into view. No script, no hiding. `prefers-reduced-motion` turns it all off.
+
+**The dev server can serve stale CSS.** Twice the Turbopack dev server kept serving an old compiled stylesheet after globals.css changed. Symptom: new classes in the HTML, no matching rules in the CSS. Fix: restart the dev server. Always confirm with the served file, not the source.
+
+**Measure, then look.** The inspector catches what can be measured (contrast, sizes, edges, pictures, motion). It does not catch a hole, a weak crop or a tab the same colour as its background. Screenshots at every width, every round.
+
+### Common mistakes to watch for
+- Trusting hot reload. Check the served CSS when styles "don't apply".
+- Raw hex colours or pixel sizes in components. Use the tokens.
+- Putting your own CSS outside a layer when you also use utility classes.
+- Forgetting `alt` text that says what the picture shows, and the credit line the licence requires.
+
+### Still to do (yours)
+- Rewrite the About letter in your own words (`src/data/site.ts`, `letter`).
+- Real email and LinkedIn URL in `site.ts`.
+- A photo of you, if you want one on the identity page.
+
+### Check-in questions
+1. Why did `sm:hidden` lose to `.btn`, and what single change fixed it for every class at once?
+2. The front page sat on top of the back pages. What CSS behaviour caused it, and why does `display: flex` on the parent stop it?
+3. The stamps didn't count as pictures at 112px but did at 150px. What does that tell you about how the inspector decides, and is that a reasonable rule?

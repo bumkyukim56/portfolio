@@ -8,34 +8,34 @@ import { usePathname } from "next/navigation";
 import { site } from "@/data/site";
 
 const links = [
-  { href: "/", label: "Home" },
   { href: "/projects", label: "Projects" },
   { href: "/levart", label: "Levart" },
+  { href: site.github, label: "GitHub", external: true },
 ];
 
+// Plain navigation: wordmark, three links, no bar, no border. It sits over the
+// top of each page; the home page's dark first screen gets light text.
 export default function Nav() {
   const pathname = usePathname();
+  const onDark = pathname === "/";
+  const tone = onDark ? "text-field-ink" : "text-ink";
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800">
-      <nav className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-        <Link href="/" className="font-semibold tracking-tight">
+    <header className={`absolute inset-x-0 top-0 z-20 ${tone}`}>
+      <nav className="wrap flex items-center justify-between py-5" aria-label="Main">
+        <Link href="/" className="font-display text-lead leading-none">
           {site.shortName}
         </Link>
-        <ul className="flex gap-5 text-sm">
+        <ul className="flex gap-6">
           {links.map((link) => {
-            // "/" would match every path with startsWith, so it gets an exact check.
-            const active =
-              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+            const active = !link.external && pathname.startsWith(link.href);
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={
-                    active
-                      ? "text-zinc-900 dark:text-zinc-50"
-                      : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-                  }
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noreferrer" : undefined}
+                  className={active ? "underline underline-offset-[6px] decoration-2" : "hover:underline hover:underline-offset-[6px]"}
                 >
                   {link.label}
                 </Link>
