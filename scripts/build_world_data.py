@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build web/src/data/world.json from GeoNames.
+"""Build web/public/data/world.json from GeoNames.
 
 Downloads two files from GeoNames (CC BY 4.0, https://www.geonames.org):
   countryInfo.txt  one row per country: ISO codes, name, continent, capital
@@ -30,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent          # the project folder
 RAW_DIR = ROOT / "scripts" / "data"                     # cached downloads
-OUT_FILE = ROOT / "web" / "src" / "data" / "world.json"
+OUT_FILE = ROOT / "web" / "public" / "data" / "world.json"
 
 # --- Settings ---------------------------------------------------------------
 

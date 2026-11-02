@@ -158,3 +158,46 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. What would change in the output if you removed the `capitals[:1] +` part of `pick_cities`?
 2. Why is `scripts/data/` git-ignored but `web/src/data/world.json` committed?
 3. The JSON is 272 KB and the browser will download it. What's one way to make it smaller without losing cities?
+
+---
+
+## Session 4 — 2026-11-02 — Build step 4: clickable world map
+
+### What we did
+- Installed `d3-geo` (projection + path generator) and `topojson-client` (unpacks compact shapes), plus `world-atlas` for the country shapes.
+- Moved both JSON files to `web/public/data/` so the browser fetches them only on `/levart` instead of bundling 380 KB into every page.
+- Wrote `src/levart/types.ts`, `WorldMap.tsx`, `Levart.tsx`. The `/levart` page renders `<Levart />`.
+- 174 of 175 map shapes match our dataset by ISO numeric id (Kosovo has no id in the map file).
+
+### Concepts
+
+**An SVG map is just paths.** Each country is a polygon of lat/lng points. A projection (`geoNaturalEarth1`) maps lat/lng to x/y; a path generator (`geoPath`) turns the polygon into the `d` attribute of an SVG `<path>`. One `<path>` per country, each stylable and clickable like any element.
+
+**TopoJSON vs GeoJSON.** TopoJSON stores shared borders once, so the file is small. `feature(topology, object)` expands it into GeoJSON, which is what d3 wants.
+
+**viewBox.** `<svg viewBox="0 0 960 500" className="w-full">` draws in a 960×500 coordinate system and scales to whatever width the container has. No pixel math.
+
+**useEffect for side effects.** Network requests, timers, subscriptions: anything that reaches outside React goes in `useEffect`. The empty dependency array `[]` means "run once after the first render". The returned cleanup function runs on unmount; we use a `cancelled` flag so a late response doesn't update an unmounted component.
+
+**useMemo for expensive computations.** Building the projection and path generator costs real work. `useMemo(() => ..., [features])` reruns it only when `features` changes, not on every click.
+
+**Lifting state up.** `Levart` owns `selected`; `WorldMap` receives it as a prop and reports clicks via `onSelect`. Data flows down, events flow up. The child never changes the parent's state directly; it calls a function it was handed. Compare a Java listener/callback interface.
+
+**event.stopPropagation().** The `<svg>` has an onClick that clears the selection (ocean click). A country's onClick would bubble up to it and immediately clear what it just set, unless it stops propagation.
+
+**Record<string, Country> as a HashMap.** `byId[country.numeric] = country` gives O(1) lookup by id, the same job as `HashMap<String, Country>` in Java or a dict in Python.
+
+**Render-time branching.** `if (!features) return <skeleton />` early-returns a loading placeholder. Below it, the code can assume data exists; TypeScript narrows the type accordingly.
+
+**Tailwind on SVG.** `fill-zinc-300 hover:fill-zinc-400 dark:fill-zinc-700` work on `<path>` the same way `bg-*` works on divs.
+
+### Common mistakes to watch for
+- Forgetting the `[]` dependency array on an effect: it would refetch on every render, forever.
+- Computing the projection inside the render body without `useMemo`: works, but recomputes 175 paths per click.
+- Missing `stopPropagation` on nested click handlers.
+- Using `String(country.id)` without a null check: `"undefined"` becomes a key and a lookup id.
+
+### Check-in questions
+1. Trace a click on Brazil: which handler runs first, what state changes, and which component re-renders?
+2. Why is `path` built with `useMemo` but `features` stored with `useState`?
+3. What would you see if you removed `event.stopPropagation()` from the country path?
