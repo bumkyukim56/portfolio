@@ -63,3 +63,59 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. If you create `src/app/levart/page.tsx`, what URL does it serve?
 2. What is the difference between `layout.tsx` and `page.tsx`?
 3. Why is `node_modules/` git-ignored but `package-lock.json` is committed?
+
+---
+
+## Session 2 — 2026-11-02 — Build step 2: Home and Projects pages
+
+### What we did
+- Added `src/data/site.ts` (personal info) and `src/data/projects.ts` (project list) so content lives apart from layout.
+- Added three components: `Nav`, `Footer`, `ProjectCard`.
+- Rewrote `layout.tsx` to wrap every page with the nav and footer, and `page.tsx` as the real home page.
+- Added `/projects` and a placeholder `/levart`.
+- Lint, build, preview on desktop and mobile, push, auto-deploy.
+
+### Concepts
+
+**Data vs presentation.** Pages never contain your name or project text directly; they import it. To add a project you append to one array. Compare: a Java `record Project(...)` plus a `List<Project>`, with the UI code as methods that take a `Project`.
+
+**TypeScript types are shapes.** `type Project = { title: string; tech: string[]; featured?: boolean }` describes an object's shape. `?` means optional. `const projects: Project[] = [...]` makes the compiler check every element. Types vanish at build time; they're only for catching mistakes early, unlike Java where types exist at runtime too.
+
+**Components and props.** A component is a function that returns JSX. Its single parameter is the props object, destructured in the signature: `function ProjectCard({ project }: { project: Project })`. Calling it looks like HTML: `<ProjectCard project={p} />`.
+
+**Server vs Client Components.** By default every component renders on the server and ships as HTML, with no JavaScript for it in the browser. Add `"use client"` at the top of a file only when it needs browser-only things: current URL, click handlers, state. `Nav.tsx` is our only client component, because `usePathname()` needs the browser URL.
+
+**Hooks.** `usePathname()` is a hook: a function starting with `use` that gives a component access to React or framework state. Hooks only work in client components and must be called at the top of the function body, not inside loops or conditions.
+
+**Rendering lists with map().** `{projects.map((p) => <ProjectCard key={p.slug} project={p} />)}`. Like a Python list comprehension that produces JSX elements. Every item needs a unique `key` so React can track which element is which when the list changes.
+
+**Ternary in JSX.** `{site.photo ? <Image ... /> : <div>BK</div>}` is Python's `a if cond else b`. You can't use an `if` statement inside JSX because JSX expects expressions, not statements.
+
+**Layout nesting.** `layout.tsx` renders `<Nav />`, then `{children}`, then `<Footer />`. `children` is whichever `page.tsx` matched the URL. Change the layout once and every page changes.
+
+**Metadata.** `export const metadata = { title: ... }` in a page sets its `<title>`. The layout's `title.template` turns "Projects" into "Projects · Bumkyu Kim".
+
+**next/link vs <a>.** Use `<Link>` for internal routes: it navigates without a full page reload and prefetches. Plain `<a>` is fine for external links and `mailto:`.
+
+**Responsive Tailwind.** Classes without a prefix apply at all widths; `sm:` prefixed classes apply from 640px up. `flex-col sm:flex-row` means stacked on phones, side by side on larger screens.
+
+**JSX text escaping.** A raw `'` in JSX text triggers the lint rule `react/no-unescaped-entities`. Write `&apos;` or put the string in braces: `{"I've"}`.
+
+**Dev server hot reload can glitch.** Creating a new file that an existing file already imports can leave a stale module in the dev server. The error mentions "module factory is not available". A hard reload fixes it; it's not a bug in your code.
+
+### Common mistakes to watch for
+- Forgetting `key` on list items (React warns in the console).
+- Adding `"use client"` everywhere "just in case". It makes the bundle bigger and disables server rendering benefits. Add it only where needed.
+- Calling a hook inside an `if` or a loop.
+- Using `<a href="/projects">` instead of `<Link>` for internal pages.
+
+### Your TODOs in `src/data/site.ts`
+- Replace the placeholder bio.
+- Replace `you@example.com` with your real contact email.
+- Replace the LinkedIn URL.
+- Optionally add `web/public/photo.jpg` and uncomment the `photo` line.
+
+### Check-in questions
+1. Why is `Nav.tsx` the only file with `"use client"`? What would break if you removed that line?
+2. If you add a third project to `projects.ts` with `featured: true`, which pages change, and why?
+3. What does `key={project.slug}` do, and why isn't the array index a good key?
