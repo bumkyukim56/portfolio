@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 // The root layout wraps every page. `children` is whichever page.tsx matches the URL.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         {/* Adds the "js" class before first paint so entrance motion only hides content when script runs. */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />

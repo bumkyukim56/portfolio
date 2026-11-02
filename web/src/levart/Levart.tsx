@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import WorldMap from "./WorldMap";
 import CityPanel from "./CityPanel";
+import CitySearch from "./CitySearch";
 import StatsPanel from "./StatsPanel";
+import Passport, { type Stamp } from "./Passport";
 import Confetti from "./Confetti";
 import { computeStats, reachedMilestones } from "./stats";
 import type { Country, World } from "./types";
@@ -20,6 +22,8 @@ export type LevartProps = {
   storageKey?: string | null;
   /** Where to fetch the two data files from. Default: the site's own /data folder. */
   dataUrl?: string;
+  /** The name printed inside the passport. */
+  holder?: string;
 };
 
 // What the user has ticked: country numeric id → the ids of cities seen there.
@@ -32,10 +36,23 @@ export default function Levart({
   showStats = true,
   storageKey = DEFAULT_STORAGE_KEY,
   dataUrl = "/data",
+  holder = "Bumkyu Kim",
 }: LevartProps = {}) {
   const [countries, setCountries] = useState<Record<string, Country>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [visits, setVisits] = useState<Visits>({});
+  const [stamps, setStamps] = useState<Record<string, string>>({}); // numeric id → date of first city
+  const [open, setOpen] = useState(false);     // is the passport open?
+  const [tools, setTools] = useState(false);   // are the search and map mounted? (follows `open`, after the swing)
+
+  // The cover's swing is 700ms of CSS. Mounting the map (175 paths) in the same frame would
+  // stall the start of that transition, so the tools mount once the swing is over.
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => setTools(true), 720);
+    return () => clearTimeout(timer);
+  }, [open]);
+  const [latestStamp, setLatestStamp] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false); // true once localStorage has been read
   const [burst, setBurst] = useState(0);       // increments when a new milestone is reached
   const seenMilestones = useRef<Set<string> | null>(null);
@@ -61,6 +78,8 @@ export default function Levart({
     try {
       const raw = window.localStorage.getItem(storageKey);
       if (raw) setVisits(JSON.parse(raw) as Visits);
+      const rawStamps = window.localStorage.getItem(`${storageKey}.stamps`);
+      if (rawStamps) setStamps(JSON.parse(rawStamps) as Record<string, string>);
     } catch {
       // private mode or blocked storage: carry on without saving
     }
@@ -73,10 +92,11 @@ export default function Levart({
     if (!loaded || storageKey === null) return;
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(visits));
+      window.localStorage.setItem(`${storageKey}.stamps`, JSON.stringify(stamps));
     } catch {
       // ignore
     }
-  }, [visits, loaded, storageKey]);
+  }, [visits, stamps, loaded, storageKey]);
 
   useEffect(() => {
     fetch(`${dataUrl}/world.json`)
@@ -88,12 +108,20 @@ export default function Levart({
         // Countries passed in as props start with their first city (the capital) ticked,
         // unless the visitor already has something saved for them.
         if (initialVisited.length > 0) {
+          const today = new Date().toISOString().slice(0, 10);
           setVisits((previous) => {
             const next = { ...previous };
             for (const country of world.countries) {
               if (initialVisited.includes(country.code) && !(country.numeric in next) && country.cities[0]) {
                 next[country.numeric] = [country.cities[0].id];
               }
+            }
+            return next;
+          });
+          setStamps((previous) => {
+            const next = { ...previous };
+            for (const country of world.countries) {
+              if (initialVisited.includes(country.code) && !(country.numeric in next)) next[country.numeric] = today;
             }
             return next;
           });
@@ -106,13 +134,23 @@ export default function Levart({
   // Toggle one city. State is never mutated in place: we build a new object so
   // React sees the change (compare: returning a new list instead of editing one).
   function toggleCity(numeric: string, cityId: number) {
-    setVisits((previous) => {
-      const current = previous[numeric] ?? [];
-      const next = current.includes(cityId)
-        ? current.filter((id) => id !== cityId)
-        : [...current, cityId];
-      return { ...previous, [numeric]: next };
-    });
+    const current = visits[numeric] ?? [];
+    const next = current.includes(cityId) ? current.filter((id) => id !== cityId) : [...current, cityId];
+    setVisits({ ...visits, [numeric]: next });
+    syncStamp(numeric, current.length, next.length);
+  }
+
+  // A country's stamp appears the first time it gets a city and goes when its last city is removed.
+  function syncStamp(numeric: string, before: number, after: number) {
+    if (before === 0 && after > 0) {
+      setStamps({ ...stamps, [numeric]: new Date().toISOString().slice(0, 10) });
+      setLatestStamp(numeric);
+    } else if (before > 0 && after === 0) {
+      const rest = { ...stamps };
+      delete rest[numeric];
+      setStamps(rest);
+      if (latestStamp === numeric) setLatestStamp(null);
+    }
   }
 
   // A country counts as visited once at least one of its cities is ticked.
@@ -148,48 +186,83 @@ export default function Levart({
   }, [reached, loaded, countries]);
 
   function reset() {
-    if (!window.confirm("Clear every ticked city and start over?")) return;
+    if (!window.confirm("Clear every city and start over?")) return;
     setVisits({});
+    setStamps({});
+    setLatestStamp(null);
     setSelected(null);
+  }
+
+  function addCity(numeric: string, cityId: number) {
+    const current = visits[numeric] ?? [];
+    if (current.includes(cityId)) return;
+    setVisits({ ...visits, [numeric]: [...current, cityId] });
+    syncStamp(numeric, current.length, current.length + 1);
+    setSelected(numeric); // show the country you just added to
   }
 
   const country = selected ? countries[selected] : undefined;
 
-  return (
-    <div className="flex flex-col gap-4 sm:gap-6">
-      <Confetti burst={burst} />
-      {showStats && <StatsPanel stats={stats} reached={reached} onReset={reset} />}
-      <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
-      <div data-ui className="bg-[var(--lv-panel)] p-3 lg:col-span-8 sm:p-5">
-        <WorldMap
-          selected={selected}
-          onSelect={setSelected}
-          isKnown={(id) => id in countries}
-          visited={visitedCountries}
-          progress={progress}
-          flagCode={(id) => countries[id]?.code.toLowerCase()}
-          dataUrl={dataUrl}
-        />
-      </div>
+  const stampList: Stamp[] = Object.entries(stamps)
+    .filter(([numeric]) => countries[numeric])
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([numeric, date]) => ({ numeric, date, code: countries[numeric].code, name: countries[numeric].name }));
 
-      <div ref={panelRef} className="scroll-mt-4 lg:col-span-4">
-        {country ? (
-          <CityPanel
-            country={country}
-            checked={new Set(visits[country.numeric] ?? [])}
-            onToggle={(cityId) => toggleCity(country.numeric, cityId)}
-            onClose={() => setSelected(null)}
+  return (
+    <div className="flex flex-col gap-6 sm:gap-8">
+      <Confetti burst={burst} />
+
+      <Passport
+        open={open}
+        onToggle={() => {
+          if (open) setTools(false); // closing: unmount the tools at once so the next open starts clean
+          setOpen(!open);
+        }}
+        holder={holder}
+        stamps={stampList}
+        latest={latestStamp}
+        identity={showStats ? <StatsPanel stats={stats} reached={reached} onReset={reset} compact /> : null}
+      />
+
+      {open && tools && (
+        <div className="reveal is-in flex flex-col gap-4 sm:gap-6">
+          <CitySearch
+            countries={countries}
+            onAdd={addCity}
+            isAdded={(numeric, cityId) => (visits[numeric] ?? []).includes(cityId)}
           />
-        ) : (
-          <div className="bg-[var(--lv-panel)] p-5 sm:p-6">
-            <p className="font-display text-lead leading-none">Pick a country</p>
-            <p className="mt-2 text-muted">
-              Click one on the map to see its cities, then tick the ones you have been to.
-            </p>
+          <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
+            <div data-ui className="bg-[var(--lv-panel)] p-3 lg:col-span-8 sm:p-5">
+              <WorldMap
+                selected={selected}
+                onSelect={setSelected}
+                isKnown={(id) => id in countries}
+                visited={visitedCountries}
+                progress={progress}
+                flagCode={(id) => countries[id]?.code.toLowerCase()}
+                dataUrl={dataUrl}
+              />
+            </div>
+            <div ref={panelRef} className="scroll-mt-4 lg:col-span-4">
+              {country ? (
+                <CityPanel
+                  country={country}
+                  added={new Set(visits[country.numeric] ?? [])}
+                  onRemove={(cityId) => toggleCity(country.numeric, cityId)}
+                  onClose={() => setSelected(null)}
+                />
+              ) : (
+                <div className="bg-[var(--lv-panel)] p-5 sm:p-6">
+                  <p className="font-display text-lead leading-none">Pick a country</p>
+                  <p className="mt-2 text-muted">
+                    Type a city above, or click a country on the map to see what you have added there.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

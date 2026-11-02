@@ -7,11 +7,12 @@ type Props = {
   stats: Stats;
   reached: Milestone[];
   onReset: () => void;
+  compact?: boolean; // inside the passport: no panel background, tighter
 };
 
 // The figures. The percentage leads; four counts follow in tabular figures; the
 // milestones sit beneath, reached ones in lime.
-export default function StatsPanel({ stats, reached, onReset }: Props) {
+export default function StatsPanel({ stats, reached, onReset, compact = false }: Props) {
   const reachedIds = new Set(reached.map((milestone) => milestone.id));
   const figures = [
     { label: "Countries", value: stats.countriesVisited, total: stats.countriesTotal },
@@ -20,13 +21,13 @@ export default function StatsPanel({ stats, reached, onReset }: Props) {
   ];
 
   return (
-    <section aria-label="Your progress" className="bg-[var(--lv-panel)] p-5 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+    <section aria-label="Your progress" className={compact ? "" : "bg-[var(--lv-panel)] p-5 sm:p-6"}>
+      <div className={compact ? "flex flex-col gap-4" : "flex flex-wrap items-end justify-between gap-x-10 gap-y-4"}>
         <div>
           <p className="font-display text-lead leading-none tabular-nums sm:text-[2.5rem]">{stats.percent}%</p>
           <p className="mt-2 text-muted">of the world explored</p>
         </div>
-        <dl className="grid grid-cols-3 gap-x-8 tabular-nums">
+        <dl className="grid grid-cols-3 gap-x-6 tabular-nums">
           {figures.map((figure) => (
             <div key={figure.label}>
               <dt className="text-small text-muted">{figure.label}</dt>

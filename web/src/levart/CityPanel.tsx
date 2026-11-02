@@ -4,16 +4,18 @@ import type { Country } from "./types";
 
 type Props = {
   country: Country;
-  checked: Set<number>;               // ids of this country's cities BK has ticked
-  onToggle: (cityId: number) => void;
+  added: Set<number>;                 // ids of this country's cities BK has added
+  onRemove: (cityId: number) => void;
   onClose: () => void;
 };
 
-// The side panel: one country's cities as a checklist. It owns no state; the parent
-// passes what is checked and a function to call when a box is toggled.
-export default function CityPanel({ country, checked, onToggle, onClose }: Props) {
+// The side panel for one country: the cities added so far, each removable, and
+// how many of the country's cities are still to go. Cities are added by typing
+// in the search box above the map.
+export default function CityPanel({ country, added, onRemove, onClose }: Props) {
   const total = country.cities.length;
-  const done = country.cities.filter((city) => checked.has(city.id)).length;
+  const cities = country.cities.filter((city) => added.has(city.id));
+  const remaining = country.cities.filter((city) => !added.has(city.id));
 
   return (
     <aside aria-label={`Cities in ${country.name}`} className="bg-[var(--lv-panel)] p-5 sm:p-6">
@@ -21,7 +23,7 @@ export default function CityPanel({ country, checked, onToggle, onClose }: Props
         <div>
           <h2 className="font-display text-lead leading-none">{country.name}</h2>
           <p className="mt-2 text-muted">
-            {country.continent} · {done} of {total} cities
+            {country.continent} · {cities.length} of {total} cities
           </p>
         </div>
         <button type="button" onClick={onClose} className="min-h-11 underline underline-offset-4">
@@ -29,30 +31,29 @@ export default function CityPanel({ country, checked, onToggle, onClose }: Props
         </button>
       </div>
 
-      {total === 0 ? (
-        <p className="mt-5 text-muted">No cities in the dataset for this place.</p>
-      ) : (
+      {cities.length > 0 ? (
         <ul className="mt-4 flex flex-col">
-          {country.cities.map((city) => {
-            const on = checked.has(city.id);
-            const isCapital = city.name === country.capital;
-            return (
-              <li key={city.id}>
-                {/* A label wrapping the input makes the whole row clickable, 44px tall for thumbs. */}
-                <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => onToggle(city.id)}
-                    className="h-5 w-5 accent-[var(--lv-mint-deep)]"
-                  />
-                  <span className={on ? "font-medium" : ""}>{city.name}</span>
-                  {isCapital && <span className="text-small text-muted">capital</span>}
-                </label>
-              </li>
-            );
-          })}
+          {cities.map((city) => (
+            <li key={city.id} className="flex min-h-11 items-center justify-between gap-4">
+              <span className="font-medium">
+                {city.name}
+                {city.name === country.capital && <span className="ml-2 text-small font-normal text-muted">capital</span>}
+              </span>
+              <button type="button" onClick={() => onRemove(city.id)} className="min-h-11 text-small text-muted underline underline-offset-4">
+                Remove
+              </button>
+            </li>
+          ))}
         </ul>
+      ) : (
+        <p className="mt-4 text-muted">Nothing here yet. Type a city above to add it.</p>
+      )}
+
+      {remaining.length > 0 && (
+        <p className="mt-4 text-small text-muted">
+          Still to see: {remaining.slice(0, 6).map((city) => city.name).join(", ")}
+          {remaining.length > 6 ? ` and ${remaining.length - 6} more` : ""}.
+        </p>
       )}
     </aside>
   );

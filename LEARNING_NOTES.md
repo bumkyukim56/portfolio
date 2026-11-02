@@ -347,3 +347,40 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why do the backend endpoints use the same `Visits` shape as localStorage rather than a nicer one?
 2. In the C signature, why is `percent` returned as `percent * 10` in an `int`?
 3. If an embed passes `storageKey={null}`, which effects in `Levart.tsx` change behaviour, and how?
+
+---
+
+## Session 9 — 2026-11-03 — Typed cities, and the passport
+
+### What we did
+- Checkboxes are gone. `CitySearch.tsx` is a combobox: type two letters, pick from eight suggestions with the mouse or arrow keys and Enter. The country panel now lists what you added, each with Remove, and what is still to see.
+- `Passport.tsx`: the Korean blue passport as the page's one object. Closed, its cover is the button. Click it and the cover swings on a 3D hinge (700ms, strong ease-out); the identity page with your stats is printed on the inside of the cover, the visa page beside it. The map and search mount once the swing is over.
+- Every country you add for the first time lands on the visa page as a dated stamp with a landing animation (scale 1.5 → 1, 420ms). Stamps persist in localStorage next to the visits.
+- Built with Taste Skill (page rules, inspector: 0 FAIL), Emil Kowalski's motion rules (ease-out curves, press feedback, no scale(0)), and Impeccable's craft floor (states, browser surfaces, copy).
+
+### Concepts
+
+**Combobox pattern.** An input with `role="combobox"`, a listbox of options, `aria-activedescendant` pointing at the highlighted one, arrow keys to move, Enter to choose, Escape to clear. `onMouseDown` with `preventDefault` on options keeps focus in the input so the list doesn't close before the click lands.
+
+**3D in CSS.** `perspective` on the parent, `transform-style: preserve-3d` on the book, `transform-origin: left center` on the cover, `rotateY(-180deg)` to open. Two faces, front and back, the back pre-rotated 180° so it reads correctly when the cover is turned.
+
+**Chrome and buttons.** `backface-visibility: hidden` is ignored on a `<button>` in Chrome, so the faces swap explicitly with `visibility` and a 320ms delay, at the moment the cover is edge-on. When a browser quirk fights you, make the behaviour explicit instead of relying on the clever property.
+
+**Nested interactive elements are invalid HTML.** A `<button>` cannot contain a `<button>`. The cover had become a button wrapping the stats panel, which has its own "Start over" button; React reported it as a hydration error. Only the front face is a button now.
+
+**Transitions can't start while the main thread is busy.** The click that opens the cover also used to mount the map's 175 paths in the same commit; the browser couldn't begin the CSS transition until that work finished, so the swing started a second late in dev. Mounting the tools 720ms later, after the swing, fixed it. `startTransition` did not, because nothing in the heavy subtree suspends.
+
+**Event handlers own the bookkeeping.** Stamps are added and removed in `addCity`/`toggleCity`, not in an effect reacting to `visits`. React's lint rule against setting state inside effects pushed the design to the better place.
+
+**A hydration-only attribute.** The inline script adds a `js` class to `<html>` before React hydrates; React sees a class the server didn't render. `suppressHydrationWarning` on `<html>` says "this difference is intended".
+
+### Common mistakes to watch for
+- Interactive elements inside interactive elements (button in button, link in link).
+- Relying on `backface-visibility` for a flip on a form control.
+- Heavy rendering in the same commit as a CSS transition's trigger.
+- Percentage heights inside `calc()` on an auto-height parent: they compute to nothing. Size from the viewport instead.
+
+### Check-in questions
+1. Why does the option list use `onMouseDown` with `preventDefault` instead of `onClick`?
+2. Walk through what the browser does in the 700ms after you click the cover: which properties change, and when do the faces swap?
+3. If the stamps were derived from `visits` in an effect, what would happen on the first page load with saved data?

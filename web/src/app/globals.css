@@ -78,7 +78,182 @@ html {
   --map-complete: var(--lv-lime);
   --map-selected: var(--lv-mint-deep);
   --map-stroke: var(--lv-ground);
+  --passport: #10295f;        /* the blue of the new Korean passport */
+  --passport-gold: #cfae5a;
+  --passport-page: #ece4d1;   /* one tone below the Levart ground, so the open book has edges */
+  --passport-spine: #ddd3bc;
+  --stamp-ink: #2fbf86;
   background: var(--lv-ground);
+}
+
+/* The passport. A book whose cover is hinged on the left; 3D transforms do the opening. */
+@layer components {
+  .passport {
+    --page-w: min(100%, 340px);
+    --page-h: calc(var(--page-w) * 1.42);
+    --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    justify-content: center;
+    perspective: 1800px;
+  }
+  .passport-book {
+    position: relative;
+    width: var(--page-w);
+    height: var(--page-h);
+    transform-style: preserve-3d;
+    transition: transform 700ms var(--ease-out-strong);
+  }
+  /* Open: the book shifts right by half a page so the two pages sit centred together. */
+  @media (min-width: 1024px) {
+    .passport.is-open .passport-book {
+      transform: translateX(calc(var(--page-w) / 2));
+    }
+  }
+  .passport-page {
+    position: absolute;
+    inset: 0;
+    background: var(--passport-page);
+    color: var(--ink);
+  }
+  .passport-page-inner {
+    height: 100%;
+    overflow: auto;
+    padding: 24px 24px 24px 30px;
+  }
+  /* The spine: a 6px band of darker paper along the visa page's inner edge. */
+  .passport-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 6px;
+    background: var(--passport-spine);
+  }
+  .passport-cover {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform 700ms var(--ease-out-strong);
+  }
+  .passport.is-open .passport-cover {
+    transform: rotateY(-180deg);
+  }
+  /* Below the two-page width there is no room to the left of the hinge: once the cover
+     has swung away it is hidden, and the identity page is printed on the visa page instead. */
+  @media (max-width: 1023px) {
+    .passport.is-open .passport-cover {
+      visibility: hidden;
+      transition: transform 700ms var(--ease-out-strong), visibility 0s 700ms;
+    }
+  }
+  .passport-front:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .passport-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    backface-visibility: hidden;
+  }
+  /* Chrome does not honour backface-visibility on a <button>, so the faces swap
+     explicitly halfway through the 700ms swing, when the cover is edge-on. */
+  .passport-front {
+    visibility: visible;
+    transition: visibility 0s 0s, transform 160ms var(--ease-out-strong);
+  }
+  .passport.is-open .passport-front {
+    visibility: hidden;
+    transition: visibility 0s 320ms, transform 160ms var(--ease-out-strong);
+  }
+  .passport-back {
+    visibility: hidden;
+    transition: visibility 0s 320ms;
+  }
+  .passport.is-open .passport-back {
+    visibility: visible;
+    transition: visibility 0s 320ms;
+  }
+  .passport-front {
+    align-items: center;
+    justify-content: space-between;
+    padding: 36px 24px;
+    border: 0;
+    background: var(--passport);
+    color: var(--passport-gold);
+    cursor: pointer;
+  }
+  .passport-front:active {
+    transform: scale(0.985);
+  }
+  .passport-front-text {
+    display: block;
+    text-align: center;
+    font-family: var(--font-text);
+    font-weight: 500;
+  }
+  .passport-emblem {
+    width: 72px;
+    height: 72px;
+  }
+  .passport-back {
+    padding: 24px;
+    background: var(--passport-page);
+    color: var(--ink);
+    transform: rotateY(180deg);
+    overflow: auto;
+  }
+
+  .passport-stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 10px;
+    margin-top: 16px;
+  }
+  .stamp {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    border: 2px solid var(--stamp-ink);
+    border-radius: 6px;
+    color: var(--stamp-ink);
+    opacity: 0.9;
+    mix-blend-mode: multiply;
+  }
+  .stamp-name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .stamp-meta {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A stamp lands: it comes down from above, slightly large, and settles. Rare, so it may show off a little. */
+  .stamp-landing {
+    animation: stamp-land 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  @keyframes stamp-land {
+    0% { opacity: 0; transform: scale(1.5) rotate(var(--tilt, 0deg)); }
+    55% { opacity: 1; transform: scale(0.96) rotate(var(--tilt, 0deg)); }
+    100% { opacity: 0.9; transform: scale(1) rotate(var(--tilt, 0deg)); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .passport-book,
+  .passport-cover {
+    transition: none;
+  }
 }
 
 @media (min-width: 640px) {
