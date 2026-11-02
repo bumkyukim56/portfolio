@@ -119,3 +119,42 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why is `Nav.tsx` the only file with `"use client"`? What would break if you removed that line?
 2. If you add a third project to `projects.ts` with `featured: true`, which pages change, and why?
 3. What does `key={project.slug}` do, and why isn't the array index a good key?
+
+---
+
+## Session 3 — 2026-11-02 — Build step 3: countries and cities dataset
+
+### What we did
+- Wrote `scripts/build_world_data.py`: downloads GeoNames `countryInfo.txt` and `cities5000.zip`, keeps the capital plus the biggest cities per country (max 15), writes `web/src/data/world.json`.
+- Result: 250 countries, 3,093 cities, 272 KB. Five uninhabited territories have no cities. Two defunct countries that GeoNames still lists are skipped.
+- Raw downloads are cached in `scripts/data/` (git-ignored). Only the generated JSON is committed.
+
+### Concepts
+
+**Derived data belongs to a script, not to your hands.** If the rules change (20 cities, drop territories), edit a constant and re-run. The output is reproducible from the source files.
+
+**Type hints in Python.** `def pick_cities(cities: list[dict]) -> list[dict]:` documents intent and lets editors catch mistakes, like TypeScript does for the frontend. Python doesn't enforce them at runtime, same as TypeScript after compilation.
+
+**pathlib.** `ROOT / "web" / "src"` builds paths with `/` thanks to operator overloading, which Java doesn't have. `Path(__file__).resolve().parent.parent` finds the project root no matter where you run the script from.
+
+**Grouping with setdefault.** `by_country.setdefault(code, []).append(city)` creates the list on first use. `collections.defaultdict(list)` does the same with less typing.
+
+**Tab-separated files.** GeoNames uses tabs, not commas. `csv.reader(..., delimiter="\t", quoting=csv.QUOTE_NONE)` handles it; the quoting flag matters because some city names contain quote characters.
+
+**Streaming a zip in memory.** `zipfile.ZipFile(path).read("cities5000.txt")` pulls one file out of the archive without extracting to disk.
+
+**Why the capital rule.** Sorting purely by population drops some capitals (Canberra, Washington, Ottawa all lose to bigger cities). Picking `feature_code == "PPLC"` first guarantees one per country.
+
+**Two codes per country.** The map library identifies countries by ISO numeric id ("410"), flag images by ISO alpha-2 ("kr"). We store both so step 4 and step 6 each have what they need.
+
+**Guarding main.** `if __name__ == "__main__": sys.exit(main())` means `import build_world_data` in a test won't trigger a download.
+
+### Common mistakes to watch for
+- Committing raw downloads. Keep caches git-ignored; commit only the generated, cleaned output.
+- Trusting source data blindly. This file had a trailing space in one name and two countries that no longer exist.
+- Forgetting `encoding="utf-8"` when opening text files with non-ASCII names.
+
+### Check-in questions
+1. What would change in the output if you removed the `capitals[:1] +` part of `pick_cities`?
+2. Why is `scripts/data/` git-ignored but `web/src/data/world.json` committed?
+3. The JSON is 272 KB and the browser will download it. What's one way to make it smaller without losing cities?
