@@ -247,3 +247,38 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why did `sm:hidden` lose to `.btn`, and what single change fixed it for every class at once?
 2. The front page sat on top of the back pages. What CSS behaviour caused it, and why does `display: flex` on the parent stop it?
 3. The stamps didn't count as pictures at 112px but did at 150px. What does that tell you about how the inspector decides, and is that a reasonable rule?
+
+---
+
+## Session 6 — 2026-11-02 (overnight) — Build steps 5 and 6: city checklists, fill-up, flag reveal
+
+### What we did
+- `CityPanel.tsx`: the side panel. One country's cities as a checklist with real checkboxes; capital marked; "n of m cities".
+- `Levart.tsx` now owns `visits`: `{ "076": [3448439, 3451190] }`, country numeric id → ticked city ids. A country is visited once one city is ticked.
+- `WorldMap.tsx` takes `progress` (share of cities ticked per country) and `flagCode`. A partly visited country fills from the bottom; a complete one shows its flag inside its own outline, with a small arrival animation.
+
+### Concepts
+
+**Immutable state updates.** `toggleCity` never pushes into the existing array. It builds a new array and a new object: `{ ...previous, [numeric]: next }`. React decides whether to re-render by comparing object identity, so editing in place would change nothing on screen. In Java terms: return a new list rather than mutating the one you were handed.
+
+**Derived state with useMemo.** `visitedCountries` and `progress` are computed from `visits`, not stored. Storing them too would mean two sources of truth that can drift. `useMemo` caches the computation until `visits` changes.
+
+**Controlled inputs.** The checkbox's `checked` comes from state and `onChange` reports the click; React is the single owner of the value. The label wraps the input so the whole 44px row is the tap target.
+
+**Clip paths.** The fill-up is a second copy of the country's path, filled in the visited colour, clipped by a `<rect>` covering the bottom share of the country's bounding box. The flag is an `<image>` clipped by the country's own path. Nothing is recomputed geometrically; the shapes just mask each other.
+
+**path.bounds().** d3's path generator can also return a feature's bounding box in map coordinates, which gives the rect its position and the flag its size.
+
+**SVG attribute transitions.** `y` and `height` on a rect are CSS properties in SVG 2, so a CSS `transition` animates the fill rising. Transform and opacity only for the flag's arrival.
+
+**pointer-events: none** on the overlay paths and the flag image, so clicks still reach the base path (and its `<title>` tooltip).
+
+### Common mistakes to watch for
+- Mutating state arrays (`current.push(id)`): React won't re-render.
+- Forgetting `key` on the per-country `<g>` after wrapping the path in a group.
+- Duplicate clipPath ids when the same map is on two pages: ids include the country id, and there is one map per page.
+
+### Check-in questions
+1. Why does `toggleCity` use the function form `setVisits((previous) => ...)` instead of `setVisits({...visits, ...})`?
+2. If BK ticks 7 of 14 cities, what are `x, y, width, height` of the clip rect relative to the country's box?
+3. What would break if `pointerEvents="none"` were removed from the flag image?
