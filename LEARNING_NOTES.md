@@ -282,3 +282,39 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why does `toggleCity` use the function form `setVisits((previous) => ...)` instead of `setVisits({...visits, ...})`?
 2. If BK ticks 7 of 14 cities, what are `x, y, width, height` of the clip rect relative to the country's box?
 3. What would break if `pointerEvents="none"` were removed from the flag image?
+
+---
+
+## Session 7 — 2026-11-02 (overnight) — Build step 7: stats, percentage, localStorage, milestones
+
+### What we did
+- `stats.ts`: pure functions. `computeStats` counts countries, cities and continents visited and blends countries ÷ total and cities ÷ total, half each, into "% of the world explored". `milestones` is a list of predicates; `reachedMilestones` filters it.
+- `StatsPanel.tsx`: the percentage leads, three counts in tabular figures, milestone badges (reached ones in lime), a "Start over" button with a confirm.
+- `Confetti.tsx`: forty squares falling for 1.6 s when a new milestone is reached, never on page load.
+- `Levart.tsx`: visits are saved to `localStorage` under `levart.visits` on every change and read back after the first render.
+
+### Concepts
+
+**Pure logic in its own file.** `stats.ts` imports no React and touches no browser API. That makes it testable with plain function calls, and it is exactly the piece step 10 will rewrite in C for WebAssembly. Draw the line between "computing" and "showing" early.
+
+**localStorage and hydration.** The server renders the page with no saved data (it has no localStorage), the browser receives that HTML, and only then an effect reads storage and updates state. Reading storage during the first render would make the browser's HTML differ from the server's: a hydration mismatch. The `loaded` flag stops the save effect from overwriting the stored data with the empty initial state.
+
+**try/catch around storage.** Private windows and blocked storage throw. The app must work without saving.
+
+**Refs for "remembered" values that shouldn't re-render.** `seenMilestones` is a `useRef`: changing it does not trigger a render, which is what you want for bookkeeping. State is for things the screen shows.
+
+**Why no setState synchronously inside effects.** React's lint rule flags it because each such call causes a second render pass. `Confetti` was rewritten to derive `active` from two values instead; the localStorage read is the one accepted exception and is marked.
+
+**Deterministic "randomness".** The confetti positions use `(index * 37) % 100` rather than `Math.random()`, so the server and browser render the same markup and the layout is reproducible.
+
+**Predicates as data.** Each milestone is `{ id, label, reached: (stats) => boolean }`. Adding one is adding an object. Compare a Java `Predicate<Stats>`.
+
+### Common mistakes to watch for
+- Saving to storage before loading from it (wipes the user's data on every visit).
+- `JSON.parse` on unknown input without a try/catch.
+- Celebrating milestones on page load because the "seen" set started empty.
+
+### Check-in questions
+1. In your own words: why can't the component read localStorage in its initial `useState`?
+2. The blend gives countries and cities equal weight. What would change if a visitor ticked one city in each of 50 countries versus 50 cities in one country?
+3. `continentsTotal` subtracts Antarctica. Where else in the app would that rule need to match?
