@@ -78,8 +78,8 @@ html {
   --map-complete: var(--lv-lime);
   --map-selected: var(--lv-mint-deep);
   --map-stroke: var(--lv-ground);
-  --passport: #10295f;        /* the blue of the new Korean passport */
-  --passport-gold: #cfae5a;
+  --passport: #1e3f8f;        /* the blue of the new Korean passport */
+  --passport-ink: #dde2ec;    /* its pale silver lettering */
   --passport-page: #ece4d1;   /* one tone below the Levart ground, so the open book has edges */
   --passport-spine: #ddd3bc;
   --stamp-ink: #2fbf86;
@@ -114,6 +114,14 @@ html {
     inset: 0;
     background: var(--passport-page);
     color: var(--ink);
+    /* Hidden while the cover is closed: in a 3D context the stamps would otherwise paint
+       through the cover. It appears when the cover is edge-on, like the faces. */
+    visibility: hidden;
+    transition: visibility 0s 0s;
+  }
+  .passport.is-open .passport-page {
+    visibility: visible;
+    transition: visibility 0s 320ms;
   }
   .passport-page-inner {
     height: 100%;
@@ -179,25 +187,57 @@ html {
   }
   .passport-front {
     align-items: center;
-    justify-content: space-between;
-    padding: 36px 24px;
+    justify-content: flex-start;
+    gap: 22px;
+    padding: 28px 24px;
     border: 0;
+    overflow: hidden;
     background: var(--passport);
-    color: var(--passport-gold);
+    color: var(--passport-ink);
     cursor: pointer;
   }
   .passport-front:active {
     transform: scale(0.985);
   }
-  .passport-front-text {
-    display: block;
-    text-align: center;
+  .passport-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
     font-family: var(--font-text);
     font-weight: 500;
+    text-align: center;
+  }
+  .passport-title-ko {
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .passport-title-en {
+    font-size: 13px;
+    letter-spacing: 0.22em;
   }
   .passport-emblem {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
+    flex: none;
+  }
+  .passport-swirl {
+    position: absolute;
+    left: -22%;
+    bottom: -14%;
+    width: 78%;
+    height: auto;
+    opacity: 0.22;
+  }
+  .passport-chip {
+    position: absolute;
+    right: 20px;
+    bottom: 18px;
+    width: 30px;
+    height: 21px;
+    opacity: 0.9;
   }
   .passport-back {
     padding: 24px;
@@ -364,9 +404,7 @@ p {
     60% { filter: blur(0); }
     to { opacity: 1; transform: none; filter: blur(0); }
   }
-  .passport.is-open .passport-book {
-    transform: scale(1.04);
-  }
+  /* The lift on opening, only where the book has room around it. */
   @media (min-width: 1024px) {
     .passport.is-open .passport-book {
       transform: translateX(calc(var(--page-w) / 2)) scale(1.04);

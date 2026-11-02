@@ -72,19 +72,49 @@ export default function Passport({ open, onToggle, holder, stamps, latest, ident
             tabIndex={open ? -1 : 0}
             className="passport-face passport-front"
           >
-            <span className="passport-front-text">
-              <span className="block text-[15px] tracking-[0.2em]">대한민국</span>
-              <span className="mt-1 block text-[13px] tracking-[0.18em]">REPUBLIC OF KOREA</span>
-            </span>
-            <svg className="passport-emblem" viewBox="0 0 64 64" aria-hidden="true">
-              <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <circle cx="32" cy="32" r="13" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <circle cx="32" cy="32" r="3.5" fill="currentColor" />
+            {/* The rosette emblem: a ring of petals around a two-part swirl, tone on tone. */}
+            <svg className="passport-emblem" viewBox="0 0 80 80" aria-hidden="true">
+              <g fill="none" stroke="currentColor" strokeWidth="1.6">
+                {Array.from({ length: 18 }, (_, i) => {
+                  const a = (i / 18) * Math.PI * 2;
+                  return <circle key={i} cx={40 + Math.cos(a) * 31} cy={40 + Math.sin(a) * 31} r="4.2" />;
+                })}
+                <circle cx="40" cy="40" r="24" />
+                <circle cx="40" cy="40" r="20" strokeWidth="1" />
+              </g>
+              <g fill="currentColor">
+                <path d="M40 24 a16 16 0 0 1 0 32 a8 8 0 0 1 0 -16 a8 8 0 0 0 0 -16 z" opacity="0.9" />
+                <circle cx="40" cy="32" r="2.6" opacity="0.9" />
+                <circle cx="40" cy="48" r="2.6" opacity="0.35" />
+              </g>
             </svg>
-            <span className="passport-front-text">
-              <span className="block text-[15px] tracking-[0.24em]">여권</span>
-              <span className="mt-1 block text-[13px] tracking-[0.3em]">PASSPORT</span>
+
+            <span className="passport-title">
+              <span className="passport-title-ko">대한민국 여권</span>
+              <span className="passport-title-en">REPUBLIC OF KOREA</span>
+              <span className="passport-title-en">PASSPORT</span>
             </span>
+
+            {/* The embossed swirl, bottom left, running off the cover's edge. */}
+            <svg className="passport-swirl" viewBox="0 0 200 200" aria-hidden="true">
+              <g fill="none" stroke="currentColor" strokeWidth="1.2">
+                <circle cx="100" cy="100" r="92" strokeDasharray="2 5" />
+                <circle cx="100" cy="100" r="76" strokeDasharray="2 5" />
+                <circle cx="100" cy="100" r="60" strokeDasharray="2 5" />
+                <path d="M100 8 a92 92 0 0 1 0 184 a46 46 0 0 1 0 -92 a46 46 0 0 0 0 -92 z" strokeWidth="2.2" />
+                <circle cx="100" cy="54" r="12" strokeWidth="2.2" />
+                <circle cx="100" cy="146" r="12" strokeWidth="2.2" />
+              </g>
+            </svg>
+
+            {/* The e-passport chip mark, bottom right. */}
+            <svg className="passport-chip" viewBox="0 0 40 28" aria-hidden="true">
+              <g fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="36" height="24" rx="3" />
+                <circle cx="20" cy="14" r="5" />
+                <path d="M4 14 h11 M25 14 h11" />
+              </g>
+            </svg>
           </button>
           <div className="passport-face passport-back">
             <p className="text-small text-muted">Levart · {holder}</p>
