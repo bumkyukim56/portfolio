@@ -20,6 +20,7 @@ type Props = {
   visited?: Set<string>;                    // numeric ids to fill as visited
   progress?: Record<string, number>;        // numeric id → share of cities ticked, 0..1
   flagCode?: (numericId: string) => string | undefined; // ISO alpha-2 for the flag image
+  dataUrl?: string;                         // where countries-110m.json lives
 };
 
 // Fills come from the palette tokens so the map matches whatever ground it sits on.
@@ -32,14 +33,14 @@ const fills = {
   selected: "var(--map-selected)",
 };
 
-export default function WorldMap({ selected, onSelect, isKnown, visited, progress, flagCode }: Props) {
+export default function WorldMap({ selected, onSelect, isKnown, visited, progress, flagCode, dataUrl = "/data" }: Props) {
   const [features, setFeatures] = useState<CountryFeature[] | null>(null);
 
   // Load the country shapes once, after the component first renders.
   // useEffect is where side effects like network requests go.
   useEffect(() => {
     let cancelled = false;
-    fetch("/data/countries-110m.json")
+    fetch(`${dataUrl}/countries-110m.json`)
       .then((response) => response.json())
       .then((topology: Topology) => {
         if (cancelled) return;
@@ -53,7 +54,7 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
     return () => {
       cancelled = true; // ignore the response if the component unmounted meanwhile
     };
-  }, []);
+  }, [dataUrl]);
 
   // Build the projection and path generator once per dataset, not on every render.
   const path = useMemo(() => {

@@ -8,55 +8,100 @@ import Confetti from "./Confetti";
 import { computeStats, reachedMilestones } from "./stats";
 import type { Country, World } from "./types";
 
-const STORAGE_KEY = "levart.visits";
+const DEFAULT_STORAGE_KEY = "levart.visits";
+
+// The public props, kept small so the component can be published on its own (build step 11).
+export type LevartProps = {
+  /** ISO alpha-2 codes to show as visited from the start, e.g. ["KR", "JP"]. Their capital is ticked. */
+  visited?: string[];
+  /** Show the percentage, counts and milestones above the map. Default true. */
+  showStats?: boolean;
+  /** Where to save in localStorage. Pass null to never save (read-only embeds). */
+  storageKey?: string | null;
+  /** Where to fetch the two data files from. Default: the site's own /data folder. */
+  dataUrl?: string;
+};
 
 // What the user has ticked: country numeric id → the ids of cities seen there.
 // A plain object keyed by string, like a HashMap<String, List<Integer>>.
 export type Visits = Record<string, number[]>;
 
 // Levart owns all state; WorldMap and CityPanel just draw and report events.
-export default function Levart() {
+export default function Levart({
+  visited: initialVisited = [],
+  showStats = true,
+  storageKey = DEFAULT_STORAGE_KEY,
+  dataUrl = "/data",
+}: LevartProps = {}) {
   const [countries, setCountries] = useState<Record<string, Country>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [visits, setVisits] = useState<Visits>({});
   const [loaded, setLoaded] = useState(false); // true once localStorage has been read
   const [burst, setBurst] = useState(0);       // increments when a new milestone is reached
   const seenMilestones = useRef<Set<string> | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // On a phone the city panel sits below the map, out of view: bring it up when a country is chosen.
+  useEffect(() => {
+    if (!selected || !panelRef.current) return;
+    if (window.matchMedia("(min-width: 1024px)").matches) return; // on a laptop it is already beside the map
+    panelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selected]);
 
   // Read saved visits once, after the first render. The server can't see localStorage,
   // so starting empty and loading in an effect keeps server and browser HTML identical.
   // (The lint rule against setting state inside an effect is right in general; here it is
   // the standard way to pick up browser-only data after hydration, so it is switched off once.)
+  /* eslint-disable react-hooks/set-state-in-effect -- reading browser storage after hydration */
   useEffect(() => {
+    if (storageKey === null) {
+      setLoaded(true);
+      return;
+    }
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      const raw = window.localStorage.getItem(storageKey);
       if (raw) setVisits(JSON.parse(raw) as Visits);
     } catch {
       // private mode or blocked storage: carry on without saving
     }
     setLoaded(true);
-  }, []);
+  }, [storageKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Save on every change, but not before the first load (that would wipe the saved data).
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || storageKey === null) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(visits));
+      window.localStorage.setItem(storageKey, JSON.stringify(visits));
     } catch {
       // ignore
     }
-  }, [visits, loaded]);
+  }, [visits, loaded, storageKey]);
 
   useEffect(() => {
-    fetch("/data/world.json")
+    fetch(`${dataUrl}/world.json`)
       .then((response) => response.json())
       .then((world: World) => {
         const byId: Record<string, Country> = {};
         for (const country of world.countries) byId[country.numeric] = country;
         setCountries(byId);
+        // Countries passed in as props start with their first city (the capital) ticked,
+        // unless the visitor already has something saved for them.
+        if (initialVisited.length > 0) {
+          setVisits((previous) => {
+            const next = { ...previous };
+            for (const country of world.countries) {
+              if (initialVisited.includes(country.code) && !(country.numeric in next) && country.cities[0]) {
+                next[country.numeric] = [country.cities[0].id];
+              }
+            }
+            return next;
+          });
+        }
       });
-  }, []);
+    // initialVisited is a prop given once; re-running on every new array identity would reset nothing useful.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataUrl]);
 
   // Toggle one city. State is never mutated in place: we build a new object so
   // React sees the change (compare: returning a new list instead of editing one).
@@ -113,7 +158,7 @@ export default function Levart() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <Confetti burst={burst} />
-      <StatsPanel stats={stats} reached={reached} onReset={reset} />
+      {showStats && <StatsPanel stats={stats} reached={reached} onReset={reset} />}
       <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
       <div data-ui className="bg-[var(--lv-panel)] p-3 lg:col-span-8 sm:p-5">
         <WorldMap
@@ -123,10 +168,11 @@ export default function Levart() {
           visited={visitedCountries}
           progress={progress}
           flagCode={(id) => countries[id]?.code.toLowerCase()}
+          dataUrl={dataUrl}
         />
       </div>
 
-      <div className="lg:col-span-4">
+      <div ref={panelRef} className="scroll-mt-4 lg:col-span-4">
         {country ? (
           <CityPanel
             country={country}

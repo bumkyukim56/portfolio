@@ -22,10 +22,10 @@ export default function StatsPanel({ stats, reached, onReset }: Props) {
   return (
     <section aria-label="Your progress" className="bg-[var(--lv-panel)] p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
-        <p className="font-display text-head leading-none tabular-nums">
-          {stats.percent}%
-          <span className="ml-3 font-sans text-body text-muted">of the world explored</span>
-        </p>
+        <div>
+          <p className="font-display text-lead leading-none tabular-nums sm:text-[2.5rem]">{stats.percent}%</p>
+          <p className="mt-2 text-muted">of the world explored</p>
+        </div>
         <dl className="grid grid-cols-3 gap-x-8 tabular-nums">
           {figures.map((figure) => (
             <div key={figure.label}>

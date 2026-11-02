@@ -20,3 +20,9 @@ __pycache__/
 
 # taste-skill working files
 .taste-skill/
+
+# Java / Maven / Gradle build output
+backend/target/
+backend/build/
+backend/.gradle/
+backend/*.log

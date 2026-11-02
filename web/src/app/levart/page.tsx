@@ -10,8 +10,8 @@ export default function LevartPage() {
     <div className="levart wrap pb-24 pt-28 sm:pt-32">
       <div className="flex flex-col gap-10">
         <div>
-          <h1 className="head">Levart, a map of where you have been</h1>
-          <p className="lead mt-4 max-w-[46ch] text-muted">
+          <h1 className="font-display text-lead leading-none">Levart, a map of where you have been</h1>
+          <p className="mt-3 max-w-[46ch] text-muted">
             Click a country, tick the cities you have seen, and watch it fill.
           </p>
         </div>

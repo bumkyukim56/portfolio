@@ -318,3 +318,32 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. In your own words: why can't the component read localStorage in its initial `useState`?
 2. The blend gives countries and cities equal weight. What would change if a visitor ticked one city in each of 50 countries versus 50 cities in one country?
 3. `continentsTotal` subtracts Antarctica. Where else in the app would that rule need to match?
+
+---
+
+## Session 8 — 2026-11-02 (overnight) — Steps 8, 9 and 11 prep, and what's left for you
+
+### What was done for you
+- `backend/README.md`: the Java backend's structure, the exact API contract the frontend expects, a Postgres schema, and hints in the order you'll hit the problems. No Java was written: that's yours.
+- `wasm/README.md`: the same for the C module: what to port, a flat C signature the browser can call, the Emscripten command, and the memory-marshalling pitfalls.
+- Levart polish (step 9, part): the page passed the taste skill's app-screen inspection (0 FAIL); the percentage figure is quieter; on phones the city panel scrolls into view when you pick a country.
+- Step 11 prep: `<Levart />` now takes `visited`, `showStats`, `storageKey` and `dataUrl` props, so the same component can be embedded read-only elsewhere. `web/src/levart/README.md` lists the five changes needed before publishing to npm.
+
+### Concepts
+**Props as a public API.** Once a component is meant for other people, its props are a contract: named, typed, documented, with defaults. Changing them later breaks users. Design them before publishing, not after.
+
+**Flat data across language boundaries.** C in WebAssembly can't take a JavaScript object. The lesson of step 10 is turning `{ "076": [id, id] }` into three parallel `int` arrays, writing them into the module's memory, and reading integers back. The same discipline applies to any FFI.
+
+**A README is a spec.** The backend README doubles as the acceptance test: when your endpoints return those exact shapes, the frontend can switch from localStorage to the API with one setting.
+
+### What's yours now (in order)
+1. `src/data/site.ts`: the About letter in your words, your real email, your LinkedIn.
+2. Buy `bumkyu.com` and attach it in Vercel (Settings → Domains).
+3. Build step 8: the Spring Boot backend from `backend/README.md`. Then say "review my backend".
+4. Build step 10: the C module from `wasm/README.md`.
+5. Build step 11 proper: the five changes in `web/src/levart/README.md`, then `npm publish`.
+
+### Check-in questions
+1. Why do the backend endpoints use the same `Visits` shape as localStorage rather than a nicer one?
+2. In the C signature, why is `percent` returned as `percent * 10` in an `int`?
+3. If an embed passes `storageKey={null}`, which effects in `Levart.tsx` change behaviour, and how?
