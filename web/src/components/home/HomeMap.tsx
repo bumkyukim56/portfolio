@@ -16,7 +16,14 @@ export default function HomeMap() {
 
   return (
     <div data-ui className="map-on-band">
-      <WorldMap selected={selected} onSelect={setSelected} isKnown={(id) => visited.has(id)} visited={visited} />
+      <WorldMap
+        selected={selected}
+        onSelect={setSelected}
+        isKnown={(id) => visited.has(id)}
+        visited={visited}
+        progress={Object.fromEntries(trips.map((trip) => [trip.numeric, 0.5]))}
+        cityCount={() => 1}
+      />
       <p className="mt-3 min-h-[1.5em]">
         {trip ? (
           <>

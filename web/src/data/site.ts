@@ -16,7 +16,7 @@ export type Site = {
 };
 
 export const site: Site = {
-  name: "Bumkyu Kim",
+  name: "BK Kim",
   shortName: "BK",
   role: "Student developer",
   from: "Seoul, Korea",
@@ -32,27 +32,21 @@ export const site: Site = {
 };
 
 // Places BK has been. `numeric` is the ISO code the map shapes use.
-// The pictures are open-licence photographs of each place (credits in public/images/credits.json);
-// none is BK's own photograph.
 export type Trip = {
   code: string;
   numeric: string;
   place: string;
   country: string;
-  image: string;
-  alt: string;
-  width: number;
-  height: number;
 };
 
 export const trips: Trip[] = [
-  { code: "KR", numeric: "410", place: "Seoul", country: "Korea", image: "/images/seoul-from-namsan-1.jpg", alt: "Seoul from Namsan: apartment blocks running out to the mountains at dusk", width: 1920, height: 1282 },
-  { code: "US", numeric: "840", place: "Philadelphia", country: "United States", image: "/images/philadelphia-skyline-from-the-camden-waterfront.jpg", alt: "The Philadelphia skyline across the Delaware River on a clear day", width: 1920, height: 1509 },
-  { code: "IS", numeric: "352", place: "Iceland", country: "Iceland", image: "/images/icelandic-landscape-near-neskaupsta-ur-july-2014.jpg", alt: "A green Icelandic valley under low cloud near Neskaupstaður", width: 1920, height: 1121 },
-  { code: "EG", numeric: "818", place: "Giza", country: "Egypt", image: "/images/all-gizah-pyramids.jpg", alt: "The three pyramids of Giza in a row under a hazy sky", width: 1920, height: 1276 },
-  { code: "PE", numeric: "604", place: "Machu Picchu", country: "Peru", image: "/images/machu-picchu-peru-2015-07-30-dd.jpg", alt: "The terraces of Machu Picchu with Huayna Picchu behind", width: 1920, height: 1276 },
-  { code: "PT", numeric: "620", place: "Lisbon", country: "Portugal", image: "/images/tram-28-lisbon-portuguese.jpg", alt: "A yellow number 28 tram climbing a narrow Lisbon street", width: 1920, height: 1203 },
-  { code: "MA", numeric: "504", place: "Chefchaouen", country: "Morocco", image: "/images/chefchaouen-blue-city-in-morocco.jpg", alt: "The blue-washed houses of Chefchaouen stacked up a hillside", width: 1920, height: 1440 },
+  { code: "KR", numeric: "410", place: "Seoul", country: "Korea" },
+  { code: "US", numeric: "840", place: "Philadelphia", country: "United States" },
+  { code: "IS", numeric: "352", place: "Iceland", country: "Iceland" },
+  { code: "EG", numeric: "818", place: "Giza", country: "Egypt" },
+  { code: "PE", numeric: "604", place: "Machu Picchu", country: "Peru" },
+  { code: "PT", numeric: "620", place: "Lisbon", country: "Portugal" },
+  { code: "MA", numeric: "504", place: "Chefchaouen", country: "Morocco" },
 ];
 
 // The letter on the About page. SAMPLE COPY written from the facts BK gave; BK should rewrite it in his own words.
@@ -62,3 +56,6 @@ export const letter: string[] = [
   "Before this I wrote Python. I like problems that have a real thing at the end, something you can click or hand to someone.",
   "If you have been somewhere I have not, I would like to hear about it.",
 ];
+
+// The letter and the footer sign with the full name; the site uses the short one.
+export const fullName = "Bumkyu Kim";

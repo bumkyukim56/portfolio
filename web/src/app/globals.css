@@ -351,6 +351,29 @@ p {
 }
 }
 
+/* The dive: a thing arrives from slightly too close and out of focus, and settles. Used for
+   the first screen on load and for what appears when the passport opens. Blur bridges the
+   two states so the eye reads one movement, not a swap. */
+@media (prefers-reduced-motion: no-preference) {
+  .dive {
+    animation: dive 900ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation-delay: var(--dive-delay, 0ms);
+  }
+  @keyframes dive {
+    from { opacity: 0; transform: scale(1.06); filter: blur(12px); }
+    60% { filter: blur(0); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+  }
+  .passport.is-open .passport-book {
+    transform: scale(1.04);
+  }
+  @media (min-width: 1024px) {
+    .passport.is-open .passport-book {
+      transform: translateX(calc(var(--page-w) / 2)) scale(1.04);
+    }
+  }
+}
+
 /* Motion helpers (step 9). Content is visible without script; .reveal only adds the move. */
 @media (prefers-reduced-motion: no-preference) {
   .js .reveal {

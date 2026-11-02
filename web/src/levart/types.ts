@@ -17,6 +17,7 @@ export type Country = {
   continent: string;
   capital: string;
   population: number;
+  color: string | null;   // the flag's main colour, e.g. "#0c3c9c"
   cities: City[];
 };
 

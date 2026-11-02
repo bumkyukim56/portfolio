@@ -1,20 +1,14 @@
-import Image from "next/image";
-import { site, trips } from "@/data/site";
+import { site } from "@/data/site";
 
-// A full-bleed photograph of the place BK is in now, carrying one solid card.
-const philadelphia = trips.find((trip) => trip.code === "US")!;
+// A full-bleed navy field carrying one solid card.
 
 export default function Contact() {
   return (
     <section id="contact" className="relative">
-      <div className="relative h-[70svh] w-full overflow-hidden bg-surface sm:h-[100svh]">
-        <Image
-          src={philadelphia.image}
-          alt={philadelphia.alt}
-          fill
-          sizes="100vw"
-          className="drift object-cover object-top"
-        />
+      <div className="relative h-[46svh] w-full bg-field sm:h-[64svh]">
+        <p className="wrap pt-16 font-display text-display text-field-ink sm:pt-24" aria-hidden="true">
+          Say hello
+        </p>
       </div>
 
       <div className="reveal relative -mt-20 mx-4 bg-ground text-ink sm:absolute sm:right-[60px] sm:top-[60px] sm:mx-0 sm:mt-0 sm:w-[380px]">

@@ -36,7 +36,7 @@ export default function Levart({
   showStats = true,
   storageKey = DEFAULT_STORAGE_KEY,
   dataUrl = "/data",
-  holder = "Bumkyu Kim",
+  holder = "BK Kim",
 }: LevartProps = {}) {
   const [countries, setCountries] = useState<Record<string, Country>>({});
   const [selected, setSelected] = useState<string | null>(null);
@@ -225,7 +225,7 @@ export default function Levart({
       />
 
       {open && tools && (
-        <div className="reveal is-in flex flex-col gap-4 sm:gap-6">
+        <div className="dive flex flex-col gap-4 sm:gap-6">
           <CitySearch
             countries={countries}
             onAdd={addCity}
@@ -239,6 +239,8 @@ export default function Levart({
                 isKnown={(id) => id in countries}
                 visited={visitedCountries}
                 progress={progress}
+                cityCount={(id) => countries[id]?.cities.length ?? 0}
+                colorOf={(id) => countries[id]?.color ?? undefined}
                 flagCode={(id) => countries[id]?.code.toLowerCase()}
                 dataUrl={dataUrl}
               />

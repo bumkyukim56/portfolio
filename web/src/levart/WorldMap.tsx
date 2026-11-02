@@ -19,6 +19,8 @@ type Props = {
   isKnown: (numericId: string) => boolean;  // do we have data for this shape?
   visited?: Set<string>;                    // numeric ids to fill as visited
   progress?: Record<string, number>;        // numeric id → share of cities ticked, 0..1
+  cityCount?: (numericId: string) => number;            // how many cities the country has: one strip each
+  colorOf?: (numericId: string) => string | undefined;  // the country's own colour (from its flag)
   flagCode?: (numericId: string) => string | undefined; // ISO alpha-2 for the flag image
   dataUrl?: string;                         // where countries-110m.json lives
 };
@@ -33,7 +35,7 @@ const fills = {
   selected: "var(--map-selected)",
 };
 
-export default function WorldMap({ selected, onSelect, isKnown, visited, progress, flagCode, dataUrl = "/data" }: Props) {
+export default function WorldMap({ selected, onSelect, isKnown, visited, progress, cityCount, colorOf, flagCode, dataUrl = "/data" }: Props) {
   const [features, setFeatures] = useState<CountryFeature[] | null>(null);
 
   // Load the country shapes once, after the component first renders.
@@ -84,12 +86,18 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
         const isSelected = id !== null && id === selected;
         const isVisited = id !== null && (visited?.has(id) ?? false);
         const share = id !== null ? (progress?.[id] ?? (isVisited ? 1 : 0)) : 0;
-        const partial = isVisited && share > 0 && share < 1; // fills from the bottom
-        const complete = isVisited && share >= 1;            // shows the flag
+        const complete = isVisited && share >= 1;            // the whole flag
         const d = path(country) ?? undefined;
         // The country's box in map coordinates: [[minX, minY], [maxX, maxY]].
         const [[x0, y0], [x1, y1]] = path.bounds(country);
-        const flag = complete && id !== null ? flagCode?.(id) : undefined;
+        const code = id !== null ? flagCode?.(id) : undefined;
+        const own = id !== null ? colorOf?.(id) : undefined;
+
+        // A visited country is painted solid in its own colour. The selected one divides into
+        // one vertical strip per city; the strips for cities you have added show the flag.
+        const strips = isSelected && isVisited && !complete && id !== null ? Math.max(1, cityCount?.(id) ?? 1) : 0;
+        const filledStrips = strips > 0 ? Math.round(share * strips) : 0;
+        const showFlag = code && (complete || filledStrips > 0);
 
         let fill = fills.unknown;
         let opacity = 0.6; // no data: fainter than land
@@ -97,69 +105,78 @@ export default function WorldMap({ selected, onSelect, isKnown, visited, progres
           fill = fills.land;
           opacity = 1;
         }
-        if (isVisited) fill = fills.visited;
-        if (isSelected) fill = fills.selected;
+        if (isVisited) fill = own ?? fills.visited;
+        if (isSelected && !isVisited) fill = fills.selected;
 
-        // A partly visited country keeps the land colour and gets a second copy of its
-        // own shape on top, clipped to the bottom `share` of its box: the fill-up.
-        const baseFill = partial ? fills.land : fill;
-        const baseOpacity = partial
-          ? "var(--map-land-opacity)"
-          : isVisited || isSelected
-            ? 1
-            : `calc(var(--map-land-opacity) * ${opacity})`;
+        const baseOpacity = isVisited || isSelected ? 1 : `calc(var(--map-land-opacity) * ${opacity})`;
         const select = (event: React.MouseEvent) => {
           event.stopPropagation(); // don't let the svg's onClick clear what we just set
           if (!known || id === null) return;
           onSelect(isSelected ? null : id);
         };
         const key = id ?? `noid-${index}`;
+        const stripWidth = strips > 0 ? (x1 - x0) / strips : 0;
 
         return (
           <g key={key} className={known ? "cursor-pointer" : undefined} onClick={select}>
             <path
               d={d}
-              fill={baseFill}
+              fill={fill}
               style={{ fillOpacity: baseOpacity }}
-              stroke="var(--map-stroke)"
-              strokeWidth={0.6}
-              className={`transition-[fill] duration-200 ${known && !flag ? "hover:brightness-90" : ""}`}
+              stroke={isSelected ? fills.selected : "var(--map-stroke)"}
+              strokeWidth={isSelected ? 1.2 : 0.6}
+              className={`transition-[fill] duration-200 ${known && !showFlag ? "hover:brightness-90" : ""}`}
             >
               <title>{country.properties.name}</title>
             </path>
 
-            {partial && (
+            {/* Strip dividers on the selected country: one line between each pair of cities. */}
+            {strips > 0 && (
               <>
-                <clipPath id={`fill-${key}`}>
-                  <rect
-                    x={x0}
-                    y={y0 + (y1 - y0) * (1 - share)}
-                    width={x1 - x0}
-                    height={(y1 - y0) * share}
-                    style={{ transition: "y 500ms cubic-bezier(0.2, 0.7, 0.2, 1), height 500ms cubic-bezier(0.2, 0.7, 0.2, 1)" }}
-                  />
+                <clipPath id={`shape-${key}`}>
+                  <path d={d} />
                 </clipPath>
-                <path d={d} fill={isSelected ? fills.selected : fills.visited} clipPath={`url(#fill-${key})`} pointerEvents="none" />
+                <g clipPath={`url(#shape-${key})`} pointerEvents="none">
+                  {Array.from({ length: strips - 1 }, (_, i) => (
+                    <line
+                      key={i}
+                      x1={x0 + stripWidth * (i + 1)}
+                      x2={x0 + stripWidth * (i + 1)}
+                      y1={y0}
+                      y2={y1}
+                      stroke="var(--map-stroke)"
+                      strokeWidth={0.8}
+                    />
+                  ))}
+                </g>
               </>
             )}
 
-            {flag && (
+            {showFlag && (
               <>
                 <clipPath id={`flag-${key}`}>
-                  <path d={d} />
+                  {complete ? (
+                    <path d={d} />
+                  ) : (
+                    // Only the filled strips, intersected with the country's outline (the flag
+                    // group below is itself clipped to the shape).
+                    <rect x={x0} y={y0} width={stripWidth * filledStrips} height={y1 - y0}
+                      style={{ transition: "width 450ms cubic-bezier(0.23, 1, 0.32, 1)" }} />
+                  )}
                 </clipPath>
-                <g className="flag-in" style={{ transformOrigin: `${(x0 + x1) / 2}px ${(y0 + y1) / 2}px` }}>
-                  <image
-                    href={`https://flagcdn.com/w320/${flag}.png`}
-                    x={x0}
-                    y={y0}
-                    width={x1 - x0}
-                    height={y1 - y0}
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#flag-${key})`}
-                    pointerEvents="none"
-                  />
-                  {isSelected && <path d={d} fill="none" stroke={fills.selected} strokeWidth={1.5} pointerEvents="none" />}
+                <g className={complete ? "flag-in" : undefined} style={{ transformOrigin: `${(x0 + x1) / 2}px ${(y0 + y1) / 2}px` }} pointerEvents="none">
+                  <g clipPath={complete ? undefined : `url(#shape-${key})`}>
+                    <image
+                      href={`https://flagcdn.com/w320/${code}.png`}
+                      x={x0}
+                      y={y0}
+                      width={x1 - x0}
+                      height={y1 - y0}
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#flag-${key})`}
+                    />
+                  </g>
+                  {isSelected && <path d={d} fill="none" stroke={fills.selected} strokeWidth={1.2} />}
                 </g>
               </>
             )}

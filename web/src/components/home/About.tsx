@@ -1,4 +1,4 @@
-import { site, letter } from "@/data/site";
+import { site, letter, fullName } from "@/data/site";
 import { scallopEdge } from "@/components/shapes";
 
 // A letter on a paper sheet with a scalloped bottom edge, on a contrasting ground,
@@ -21,7 +21,7 @@ export default function About() {
               </p>
             ))}
           </div>
-          <p className="mt-8 font-display text-lead leading-none">{site.name}</p>
+          <p className="mt-8 font-display text-lead leading-none">{fullName}</p>
           <p className="mt-1 text-small text-muted">
             {site.role}, {site.school}
           </p>

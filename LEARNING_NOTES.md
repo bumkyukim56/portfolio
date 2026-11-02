@@ -384,3 +384,27 @@ Running summary of new concepts covered each session. Newest session at the bott
 1. Why does the option list use `onMouseDown` with `preventDefault` instead of `onClick`?
 2. Walk through what the browser does in the 700ms after you click the cover: which properties change, and when do the faces swap?
 3. If the stamps were derived from `visits` in an effect, what would happen on the first page load with saved data?
+
+---
+
+## Session 10 — 2026-11-03 — Pictures out, flag colours, city strips, the dive
+
+### What we did
+- Removed the seven photographs and their credit line; the hero lists the places as text and the contact card sits on a navy field. The site now says BK Kim.
+- The data script now downloads each flag (40px) and picks its most common saturated colour; `world.json` carries `color` per country.
+- On the Levart map a visited country is painted solid in its own colour. Click it and it divides into one vertical strip per city; the strips for cities you have added show the flag through them; all cities added, the whole country becomes the flag.
+- "Dive" motion: the first screen of the home page and the tools under the open passport arrive from slightly too close and out of focus, then settle (900ms, strong ease-out, blur to zero by 60%). The open book lifts 4%.
+
+### Concepts
+**Colour from data, not by hand.** 250 countries each need a colour. Pick it from something real (the flag) with a rule you can explain: bucket pixels coarsely, skip white, black and greys, take the commonest saturated colour. Then look at a dozen results, because rules have edge cases (Germany becomes red, which is fine; a quantised blend of red and blue was not).
+
+**Clip paths compose.** The strip reveal is a rectangle clip (how many strips) applied to the flag image inside a group that is itself clipped to the country's outline. Two clips, no geometry maths. The strip count comes from the city count, the width from the bounding box.
+
+**Blur as a bridge.** A crossfade shows two objects overlapping; a blur during the move makes the eye read one object coming into focus. Keep it short and under 20px.
+
+**When the brief removes something the tool wants.** The taste inspector's picture floor is a default, not a law. You said no pictures, so the inspector runs with `--allow few-pictures,no-footage` and the report says so. The brief wins.
+
+### Check-in questions
+1. Why is the flag colour computed in the Python script rather than in the browser when the page loads?
+2. A country with 15 cities and 3 added shows a flag through 3 strips. Which two clip paths are involved, and which one changes when you add a 4th city?
+3. The hero's three dive elements have delays of 0, 120 and 260ms. What would you lose if all three were 0?

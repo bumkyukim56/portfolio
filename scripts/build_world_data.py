@@ -21,8 +21,10 @@ import csv
 import io
 import json
 import sys
+import urllib.error
 import urllib.request
 import zipfile
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -36,6 +38,7 @@ OUT_FILE = ROOT / "web" / "public" / "data" / "world.json"
 
 COUNTRY_INFO_URL = "https://download.geonames.org/export/dump/countryInfo.txt"
 CITIES_URL = "https://download.geonames.org/export/dump/cities5000.zip"
+FLAG_URL = "https://flagcdn.com/w40/{code}.png"   # tiny flags, only used to pick each country's colour
 
 MAX_CITIES = 15          # per country, capital included
 
@@ -56,17 +59,23 @@ CONTINENTS = {
 # --- Download ---------------------------------------------------------------
 
 
-def download(url: str, dest: Path) -> Path:
-    """Fetch url into dest unless it is already there."""
+def download(url: str, dest: Path, quiet: bool = False) -> Path | None:
+    """Fetch url into dest unless it is already there. Returns None if the server has no such file."""
     if dest.exists():
-        print(f"  cached    {dest.name}")
+        if not quiet:
+            print(f"  cached    {dest.name}")
         return dest
-    print(f"  fetching  {url}")
+    if not quiet:
+        print(f"  fetching  {url}")
     dest.parent.mkdir(parents=True, exist_ok=True)
     request = urllib.request.Request(url, headers={"User-Agent": "levart-data-builder"})
-    with urllib.request.urlopen(request) as response, open(dest, "wb") as out:
-        out.write(response.read())
-    print(f"  saved     {dest.name} ({dest.stat().st_size // 1024} KB)")
+    try:
+        with urllib.request.urlopen(request) as response, open(dest, "wb") as out:
+            out.write(response.read())
+    except urllib.error.HTTPError:
+        return None
+    if not quiet:
+        print(f"  saved     {dest.name} ({dest.stat().st_size // 1024} KB)")
     return dest
 
 
@@ -128,6 +137,38 @@ def load_cities(zip_path: Path) -> list[dict]:
     return cities
 
 
+# --- Flag colour ------------------------------------------------------------
+
+
+def flag_colour(code: str) -> str | None:
+    """The flag's most prominent colour that is not white, as a hex string.
+
+    Downloads a 40px-wide flag (cached), quantises it to a few colours and picks
+    the commonest one that is not near-white. White-heavy flags (Japan) then give
+    their emblem colour, which is what people recognise.
+    """
+    try:
+        from PIL import Image  # Pillow; already installed with Anaconda
+    except ImportError:
+        return None
+    path = download(FLAG_URL.format(code=code.lower()), RAW_DIR / "flags" / f"{code.lower()}.png", quiet=True)
+    if path is None:
+        return None
+    image = Image.open(path).convert("RGB")
+    # Count real pixel colours, bucketed coarsely so anti-aliased edges join their neighbours.
+    # Prefer a saturated colour: white, black and greys are structure, not identity.
+    buckets: Counter[tuple[int, int, int]] = Counter()
+    for r, g, b in image.getdata():
+        buckets[(r // 24 * 24, g // 24 * 24, b // 24 * 24)] += 1
+    def saturation(c: tuple[int, int, int]) -> float:
+        hi, lo = max(c), min(c)
+        return 0.0 if hi == 0 else (hi - lo) / hi
+    saturated = [(c, n) for c, n in buckets.most_common() if saturation(c) > 0.35 and max(c) > 60]
+    chosen = saturated[0][0] if saturated else buckets.most_common(1)[0][0]
+    r, g, b = (min(255, v + 12) for v in chosen)  # bucket floor → roughly the bucket's middle
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 # --- Combine ----------------------------------------------------------------
 
 
@@ -159,8 +200,11 @@ def build() -> dict:
     for city in cities:
         by_country.setdefault(city["country"], []).append(city)
 
+    print("Flag colours")
     for code, country in countries.items():
         country["cities"] = pick_cities(by_country.get(code, []))
+        country["color"] = flag_colour(code)
+    print(f"  {sum(1 for c in countries.values() if c['color'])} of {len(countries)} countries coloured")
 
     ordered = sorted(countries.values(), key=lambda c: c["name"])
     return {

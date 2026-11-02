@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { site, trips } from "@/data/site";
 
@@ -24,13 +23,13 @@ export default function Hero() {
   return (
     <section className="relative bg-field text-field-ink">
       <div className="wrap pt-24 text-center sm:pt-28">
-        <h1 className="display reveal mx-auto">{site.name}</h1>
-        <p className="lead reveal mx-auto mt-6 max-w-[46ch]" style={{ "--reveal-delay": "90ms" } as React.CSSProperties}>{site.tagline}</p>
+        <h1 className="display dive mx-auto">{site.name}</h1>
+        <p className="lead dive mx-auto mt-6 max-w-[46ch]" style={{ "--dive-delay": "120ms" } as React.CSSProperties}>{site.tagline}</p>
       </div>
 
       {/* The stack. Each page is offset below the one behind it so only a strip shows. */}
       {/* flex-col keeps the front page's top margin from collapsing through the container */}
-      <div className="relative mx-auto mt-14 flex w-full flex-col sm:mt-20 sm:w-[86%]">
+      <div className="dive relative mx-auto mt-14 flex w-full flex-col sm:mt-20 sm:w-[86%]" style={{ "--dive-delay": "260ms" } as React.CSSProperties}>
         {back.map((page, index) => (
           <Link
             key={page.label}
@@ -84,23 +83,11 @@ export default function Hero() {
               <p className="mt-6 max-w-[28ch]">
                 From {site.from}. Now in {site.location}, at the {site.school}.
               </p>
-              <p className="mt-2 text-muted">Seven countries, so far.</p>
+              <p className="mt-2 text-muted">Seven countries, so far:</p>
             </div>
-            <ul className="grid grid-cols-4 gap-3 sm:grid-cols-7" aria-label="Places visited">
-              {trips.map((trip, index) => (
-                <li key={trip.code} className="stamp reveal" style={{ "--reveal-delay": `${240 + index * 70}ms` } as React.CSSProperties}>
-                  <Image
-                    src={trip.image}
-                    alt={trip.alt}
-                    width={320}
-                    height={320}
-                    sizes="(min-width: 640px) 160px, 25vw"
-                    className="aspect-square w-full object-cover"
-                  />
-                  <span className="mt-1 block text-small text-muted" aria-hidden="true">{trip.place}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="max-w-[60ch]" aria-label="Places visited">
+              {trips.map((trip) => trip.place).join(" · ")}
+            </p>
           </div>
         </div>
       </div>
